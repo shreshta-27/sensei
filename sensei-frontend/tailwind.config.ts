@@ -51,6 +51,20 @@ const config: Config = {
         'faculty-danger': 'var(--f-danger)',
         'faculty-teal': 'var(--f-teal)',
         'faculty-purple': 'var(--f-purple)',
+
+        /* Admin Pastel Theme */
+        'adm-bg': 'var(--adm-bg)',
+        'adm-surface': 'var(--adm-surface)',
+        'adm-border': 'var(--adm-border-solid)',
+        'adm-text': 'var(--adm-text)',
+        'adm-text-sub': 'var(--adm-text-sub)',
+        'adm-text-muted': 'var(--adm-text-muted)',
+        'adm-accent': 'var(--adm-accent)',
+        'adm-accent-light': 'var(--adm-accent-light)',
+        'adm-high': 'var(--adm-high)',
+        'adm-medium': 'var(--adm-medium)',
+        'adm-info': 'var(--adm-info)',
+        'adm-low': 'var(--adm-low)',
       },
       borderWidth: {
         '3': '3px',

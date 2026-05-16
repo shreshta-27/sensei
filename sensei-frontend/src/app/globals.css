@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&family=Courier+Prime:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
@@ -611,6 +613,163 @@ body {
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ========================================
+   ADMIN PASTEL THEME TOKENS
+   ======================================== */
+:root {
+  /* Missing vars from old admin theme */
+  --a-card: #0D0D1E;
+  --a-accent: #7B61FF;
+
+  /* Admin Pastel Theme */
+  --adm-bg: #F5F3FF;
+  --adm-surface: #FFFFFF;
+  --adm-surface-raised: #FAFAFF;
+  --adm-border: rgba(124, 58, 237, 0.1);
+  --adm-border-solid: #E8E3FF;
+  --adm-shadow-sm: 0 2px 8px rgba(124, 58, 237, 0.06);
+  --adm-shadow: 0 4px 24px rgba(124, 58, 237, 0.08);
+  --adm-shadow-lg: 0 8px 40px rgba(124, 58, 237, 0.12);
+
+  /* Text */
+  --adm-text: #1E1050;
+  --adm-text-sub: #5B5680;
+  --adm-text-muted: #9490BC;
+
+  /* Accent */
+  --adm-accent: #7C3AED;
+  --adm-accent-light: #EDE9FE;
+  --adm-accent-soft: #DDD6FE;
+
+  /* Stat card: Purple (Students) */
+  --adm-stat-purple-bg: #EDE9FE;
+  --adm-stat-purple-accent: #6D28D9;
+  --adm-stat-purple-icon: #8B5CF6;
+
+  /* Stat card: Amber (Faculty) */
+  --adm-stat-amber-bg: #FEF9C3;
+  --adm-stat-amber-accent: #D97706;
+  --adm-stat-amber-icon: #FBBF24;
+
+  /* Stat card: Rose (Courses) */
+  --adm-stat-rose-bg: #FFE4E8;
+  --adm-stat-rose-accent: #BE123C;
+  --adm-stat-rose-icon: #F43F5E;
+
+  /* Stat card: Emerald (System Health) */
+  --adm-stat-emerald-bg: #D1FAE5;
+  --adm-stat-emerald-accent: #065F46;
+  --adm-stat-emerald-icon: #10B981;
+
+  /* Severity */
+  --adm-high: #EF4444;
+  --adm-high-bg: #FEF2F2;
+  --adm-medium: #F59E0B;
+  --adm-medium-bg: #FFFBEB;
+  --adm-info: #6366F1;
+  --adm-info-bg: #EEF2FF;
+  --adm-low: #22C55E;
+  --adm-low-bg: #F0FDF4;
+
+  /* Nav */
+  --adm-nav-active-bg: #EDE9FE;
+  --adm-nav-active-text: #7C3AED;
+  --adm-nav-hover-bg: #F5F3FF;
+  --adm-nav-text: #5B5680;
+}
+
+/* Admin scrollbar */
+.adm-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+.adm-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 8px; }
+.adm-scrollbar::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.18); border-radius: 8px; }
+.adm-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--adm-accent); }
+
+/* Admin page background with dot pattern */
+.adm-page {
+  background-color: #F2F0FF;
+  background-image:
+    radial-gradient(circle, rgba(124,58,237,0.09) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  min-height: 100vh;
+}
+
+/* Glassmorphism card */
+.adm-card {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(124,58,237,0.07), 0 1px 0 rgba(255,255,255,0.85) inset;
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+.adm-card:hover {
+  box-shadow: 0 8px 32px rgba(124,58,237,0.13), 0 1px 0 rgba(255,255,255,0.85) inset;
+}
+
+/* Floating glass panel (sidebar) */
+.adm-glass-panel {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 40px rgba(124,58,237,0.15), 0 1px 0 rgba(255,255,255,0.9) inset;
+}
+
+/* Admin badge */
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.adm-badge-high   { background: var(--adm-high-bg);   color: var(--adm-high);   }
+.adm-badge-medium { background: var(--adm-medium-bg); color: var(--adm-medium); }
+.adm-badge-info   { background: var(--adm-info-bg);   color: var(--adm-info);   }
+.adm-badge-low    { background: var(--adm-low-bg);    color: var(--adm-low);    }
+
+/* Admin section title */
+.adm-section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--adm-text);
+}
+
+/* Count-up animation */
+@keyframes adm-count-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.adm-count-fade {
+  animation: adm-count-fade 0.5s ease forwards;
+}
+
+/* Pulse dot (live indicator) */
+@keyframes adm-pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.5); opacity: 0.5; }
+}
+.adm-pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--adm-low);
+  animation: adm-pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Trend sparkline placeholder */
+.adm-sparkline-up   { color: #22C55E; }
+.adm-sparkline-down { color: #EF4444; }
+
+/* Mobile bottom nav safe area */
+.adm-pb-mobile { padding-bottom: 96px; }
+@media (min-width: 1024px) { .adm-pb-mobile { padding-bottom: 0; } }
 
 
 @keyframes twinkle {

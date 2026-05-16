@@ -4,151 +4,410 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { Activity, AlertTriangle, BookOpen, Database, FileText, LayoutDashboard, LogOut, Settings, ShieldAlert, Users, Menu, X, Zap } from 'lucide-react';
+import {
+  LayoutDashboard, GraduationCap, BarChart3, Users,
+  Brain, AlertTriangle, FileText, Zap, BookOpen,
+  Database, Settings, LogOut, X, Menu, ChevronRight,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TeacherAIChatbot = dynamic(() => import('@/components/TeacherAIChatbot'), { ssr: false });
 
-const nav = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/dropout-warning', label: 'Dropout Warning', icon: ShieldAlert },
-  { href: '/admin/resource-optimizer', label: 'Resources', icon: Zap },
-  { href: '/admin/curriculum', label: 'Curriculum', icon: BookOpen },
-  { href: '/admin/analytics', label: 'Analytics', icon: Activity },
-  { href: '/admin/interventions', label: 'Interventions', icon: AlertTriangle },
-  { href: '/admin/faculty', label: 'Faculty', icon: Users },
-  { href: '/admin/bulk-import', label: 'Bulk Import', icon: Database },
-  { href: '/admin/reports', label: 'Reports', icon: FileText },
-  { href: '/admin/system', label: 'System', icon: Settings },
+const NAV_ITEMS = [
+  { href: '/admin',                    label: 'Overview',      icon: LayoutDashboard },
+  { href: '/admin/users',              label: 'Students',      icon: GraduationCap   },
+  { href: '/admin/analytics',          label: 'Analytics',     icon: BarChart3       },
+  { href: '/admin/faculty',            label: 'Faculty',       icon: Users           },
+  { href: '/admin/dropout-warning',    label: 'AI Engine',     icon: Brain           },
+  { href: '/admin/interventions',      label: 'Interventions', icon: AlertTriangle   },
+  { href: '/admin/reports',            label: 'Reports',       icon: FileText        },
+  { href: '/admin/resource-optimizer', label: 'Resources',     icon: Zap             },
+  { href: '/admin/curriculum',         label: 'Curriculum',    icon: BookOpen        },
+  { href: '/admin/bulk-import',        label: 'Bulk Import',   icon: Database        },
+  { href: '/admin/system',             label: 'System Logs',   icon: Settings        },
+];
+
+const MOBILE_QUICK = [
+  { href: '/admin',                 label: 'Home',     icon: LayoutDashboard },
+  { href: '/admin/users',           label: 'Students', icon: GraduationCap   },
+  { href: '/admin/analytics',       label: 'Analytics',icon: BarChart3       },
+  { href: '/admin/dropout-warning', label: 'AI',       icon: Brain           },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [hoverState, setHoverState] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [expanded, setExpanded]   = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => { if (!user || user.role !== 'admin') router.push('/login'); }, [user, router]);
-  
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
 
   if (!user) return null;
 
-  return (
-    <div className="flex min-h-screen relative overflow-hidden bg-[#0D0D1A]">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 pointer-events-none" />
+  const isActive = (href: string) =>
+    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
 
-      {}
-      <AnimatePresence>
-        {hoverState && (
-          <motion.div 
-            key="viewport-tooltip-admin"
-            initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5 }}
-            transition={{ duration: 0.1 }}
-            className="fixed z-[100] flex items-center gap-2 bg-purple-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap border border-purple-500/50 shadow-[0_0_15px_rgba(168,155,254,0.3)]"
-            style={{ 
-              left: hoverState.x, 
-              top: hoverState.y, 
-              transform: 'translateY(-50%)',
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+    toast.success('Signed out');
+  };
+
+  // ─────────────────────────────────────────────────────
+  //  Sidebar width constants
+  // ─────────────────────────────────────────────────────
+  const NARROW_W  = 64;
+  const EXPANDED_W = 232;
+
+  return (
+    <div className="adm-page min-h-screen">
+
+      {/* ══════════════════════════════════════════════
+          DESKTOP  –  Collapsible Icon Rail (different!)
+          Starts narrow (icons only). Expands on hover.
+          Overlays content – non-disruptive.
+         ══════════════════════════════════════════════ */}
+      <aside
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        className="hidden lg:flex fixed left-3 top-3 bottom-3 z-50 flex-col overflow-hidden adm-glass-panel"
+        style={{
+          width: expanded ? `${EXPANDED_W}px` : `${NARROW_W}px`,
+          borderRadius: '22px',
+          transition: 'width 280ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {/* ── Brand ── */}
+        <div
+          className="flex items-center gap-3 px-3 pt-5 pb-4 flex-shrink-0 overflow-hidden"
+          style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
+        >
+          <div
+            className="w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-base shadow-md"
+            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)' }}
+          >
+            S
+          </div>
+          <div
+            className="overflow-hidden whitespace-nowrap flex-shrink-0"
+            style={{
+              opacity: expanded ? 1 : 0,
+              transform: expanded ? 'translateX(0)' : 'translateX(-8px)',
+              transition: 'opacity 200ms ease, transform 200ms ease',
+              transitionDelay: expanded ? '80ms' : '0ms',
             }}
           >
-            <span className="text-xs font-bold tracking-widest uppercase">{hoverState.label}</span>
-            {}
-            <div className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-purple-900/90 rotate-45 border-r border-t border-purple-500/50" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {}
-      <main className="flex-1 w-full lg:pr-[18rem] relative z-10 transition-all duration-300">
-        <header className="sticky top-0 z-40 px-4 md:px-8 py-4 md:py-5 flex justify-between items-center bg-[#0D0D1A]/90 backdrop-blur-md border-b border-purple-500/20 lg:border-none lg:bg-gradient-to-b lg:from-[#0D0D1A] lg:to-transparent">
-          <div className="flex items-center gap-3 md:gap-4">
-            <h2 className="text-xl md:text-3xl tracking-widest relative" style={{ fontFamily: 'var(--font-display)', color: 'var(--a-primary)' }}>
-              MISSION CONTROL <span className="animate-pulse">🚀</span>
-            </h2>
-            <div className="hidden sm:block px-3 py-1 bg-purple-900/50 border border-purple-500/50 rounded text-purple-300 text-xs font-mono tracking-widest shadow-[0_0_10px_rgba(168,155,254,0.3)]">
-              ADMINISTRATOR
-            </div>
+            <p className="font-bold text-sm leading-tight" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>SENSEI</p>
+            <p className="text-[9px] tracking-widest uppercase" style={{ color: 'var(--adm-text-muted)' }}>AI Campus OS</p>
           </div>
-          
-          {}
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl bg-purple-900/30 border border-purple-500/50 text-purple-300 hover:bg-purple-800/50 transition-colors shadow-[0_0_15px_rgba(108,92,231,0.3)]"
+        </div>
+
+        {/* ── User ── */}
+        <div
+          className="flex items-center gap-3 px-3 py-3 flex-shrink-0 overflow-hidden"
+          style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
+        >
+          <div
+            className="w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm text-sm"
+            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #C084FC 100%)' }}
           >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {user.name?.charAt(0).toUpperCase()}
+          </div>
+          <div
+            className="overflow-hidden whitespace-nowrap flex-shrink-0"
+            style={{
+              opacity: expanded ? 1 : 0,
+              transform: expanded ? 'translateX(0)' : 'translateX(-8px)',
+              transition: 'opacity 200ms ease, transform 200ms ease',
+              transitionDelay: expanded ? '80ms' : '0ms',
+            }}
+          >
+            <p className="text-xs font-semibold truncate max-w-[140px]" style={{ color: 'var(--adm-text)', fontFamily: 'Inter, sans-serif' }}>{user.name}</p>
+            <p className="text-[10px]" style={{ color: 'var(--adm-text-muted)' }}>Administrator ⭐</p>
+          </div>
+        </div>
+
+        {/* ── Nav ── */}
+        <nav className="flex-1 overflow-y-auto adm-scrollbar py-3 px-2 space-y-0.5">
+          {NAV_ITEMS.map((n) => {
+            const active = isActive(n.href);
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                className="flex items-center gap-3 rounded-xl overflow-hidden group relative"
+                style={{
+                  padding: '9px 10px',
+                  background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
+                  transition: 'background 150ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.06)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent';
+                }}
+              >
+                {/* Active indicator */}
+                {active && (
+                  <div
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full"
+                    style={{ background: 'var(--adm-accent)' }}
+                  />
+                )}
+                {/* Icon */}
+                <div
+                  className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center"
+                  style={{ background: active ? 'rgba(124,58,237,0.15)' : 'transparent' }}
+                >
+                  <n.icon
+                    size={17}
+                    style={{ color: active ? 'var(--adm-accent)' : 'var(--adm-text-muted)' }}
+                  />
+                </div>
+                {/* Label */}
+                <span
+                  className="text-xs font-medium whitespace-nowrap flex-shrink-0 select-none"
+                  style={{
+                    color: active ? 'var(--adm-accent)' : 'var(--adm-text-sub)',
+                    opacity: expanded ? 1 : 0,
+                    transform: expanded ? 'translateX(0)' : 'translateX(-6px)',
+                    transition: 'opacity 200ms ease, transform 200ms ease',
+                    transitionDelay: expanded ? '90ms' : '0ms',
+                  }}
+                >
+                  {n.label}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* ── Logout ── */}
+        <div
+          className="px-2 pb-4 pt-2 flex-shrink-0"
+          style={{ borderTop: '1px solid rgba(124,58,237,0.1)' }}
+        >
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 rounded-xl w-full overflow-hidden group"
+            style={{ padding: '9px 10px', transition: 'background 150ms ease' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+          >
+            <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center">
+              <LogOut size={17} style={{ color: '#EF4444' }} />
+            </div>
+            <span
+              className="text-xs font-medium whitespace-nowrap flex-shrink-0"
+              style={{
+                color: '#EF4444',
+                opacity: expanded ? 1 : 0,
+                transform: expanded ? 'translateX(0)' : 'translateX(-6px)',
+                transition: 'opacity 200ms ease, transform 200ms ease',
+                transitionDelay: expanded ? '90ms' : '0ms',
+              }}
+            >
+              Sign Out
+            </span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ══════════════════════════════════════════════
+          MAIN CONTENT
+         ══════════════════════════════════════════════ */}
+      <main
+        className="min-h-screen flex flex-col"
+        style={{ paddingLeft: 0 }}
+      >
+        {/* Desktop left offset — matches narrow sidebar */}
+        <div className="hidden lg:block" style={{ paddingLeft: `${NARROW_W + 20}px` }}>
+          {/* spacer handled via ml on content wrapper below */}
+        </div>
+
+        {/* Mobile top bar */}
+        <header
+          className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3"
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderBottom: '1px solid rgba(124,58,237,0.1)',
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow"
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}
+            >
+              S
+            </div>
+            <span className="font-bold text-sm" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>SENSEI Admin</span>
+          </div>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--adm-accent)' }}
+          >
+            <Menu size={20} />
           </button>
         </header>
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">{children}</div>
+
+        {/* Page content */}
+        <div
+          className="flex-1 p-4 md:p-6 lg:p-7 adm-pb-mobile"
+          style={{ marginLeft: 0 }}
+        >
+          <div className="lg:ml-[84px]">
+            {children}
+          </div>
+        </div>
+
         <TeacherAIChatbot />
       </main>
 
-      {}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {}
-      <aside className={`fixed top-0 lg:top-6 right-0 lg:right-6 bottom-0 lg:bottom-6 w-72 lg:w-64 flex flex-col z-50 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
-        <div className="flex-1 lg:rounded-3xl border-l lg:border border-purple-500/30 bg-[#13132A]/90 lg:bg-[#13132A]/60 backdrop-blur-xl shadow-[0_0_30px_rgba(108,92,231,0.2)] flex flex-col overflow-hidden relative h-full">
-          {}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/10 to-transparent h-full animate-[scan_4s_linear_infinite] pointer-events-none" />
-          
-          <div className="p-6 border-b border-purple-500/20 text-center relative z-10">
-            <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-[0_0_20px_rgba(108,92,231,0.6)] border border-purple-400/50 rotate-3 group-hover:rotate-0 transition-transform">
-              {user.name?.charAt(0)}
-            </div>
-            <p className="text-xl font-bold tracking-widest text-white drop-shadow-[0_0_8px_rgba(108,92,231,0.8)]" style={{ fontFamily: 'var(--font-nav-display)' }}>SENSEI</p>
-            <p className="text-[10px] uppercase tracking-widest text-purple-400" style={{ fontFamily: 'var(--font-mono)' }}>System Active</p>
-          </div>
-
-          <nav className="flex-1 py-4 overflow-y-auto space-y-2 px-4 relative z-10 hide-scrollbar">
-            {nav.map((n) => {
-              const active = pathname === n.href;
-              return (
-                <Link key={n.href} href={n.href} 
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-300 relative group ${active ? 'bg-purple-600/30 text-purple-200 font-bold border border-purple-500/50 shadow-[0_0_15px_rgba(168,155,254,0.3)]' : 'hover:bg-purple-900/40 text-gray-400 hover:text-purple-300 border border-transparent'}`} 
-                  style={{ fontFamily: 'var(--font-nav-body)' }}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setHoverState({ label: n.label, x: rect.left - 12, y: rect.top + rect.height / 2 });
-                  }}
-                  onMouseLeave={() => setHoverState(null)}
-                >
-                  <n.icon size={18} className={`transition-all duration-300 ${active ? 'scale-110 drop-shadow-[0_0_5px_rgba(168,155,254,0.8)]' : 'group-hover:scale-110'}`} />
-                  <span className="tracking-widest uppercase text-xs">{n.label}</span>
-                  {active && <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] animate-pulse" />}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="p-4 border-t border-purple-500/20 relative z-10 bg-black/20">
-            <button 
-              onClick={() => { logout(); router.push('/login'); }} 
-              onMouseEnter={(e: any) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setHoverState({ label: 'Abort System', x: rect.left - 12, y: rect.top + rect.height / 2 });
+      {/* ══════════════════════════════════════════════
+          MOBILE – Bottom Floating Dock
+         ══════════════════════════════════════════════ */}
+      <nav
+        className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-3 py-2"
+        style={{
+          background: 'rgba(255,255,255,0.82)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.9)',
+          borderRadius: '20px',
+          boxShadow: '0 8px 32px rgba(124,58,237,0.18)',
+          minWidth: 'auto',
+        }}
+      >
+        {MOBILE_QUICK.map((n) => {
+          const active = isActive(n.href);
+          return (
+            <Link
+              key={n.href}
+              href={n.href}
+              className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl transition-all duration-150"
+              style={{
+                background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
+                color: active ? 'var(--adm-accent)' : 'var(--adm-text-muted)',
               }}
-              onMouseLeave={() => setHoverState(null)}
-              className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-red-900/30 hover:bg-red-600 text-red-400 hover:text-white text-xs uppercase tracking-widest font-bold transition-all duration-300 border border-red-500/30 hover:border-red-500 hover:shadow-[0_0_20px_rgba(244,67,54,0.4)] group"
             >
-              <LogOut size={16} className="group-hover:-translate-y-0.5 transition-transform" />
-              <span>Abort System</span>
-            </button>
-          </div>
-        </div>
-      </aside>
+              <n.icon size={19} />
+              <span className="text-[9px] font-semibold">{n.label}</span>
+            </Link>
+          );
+        })}
+        {/* Divider */}
+        <div className="w-px h-8 mx-1" style={{ background: 'rgba(124,58,237,0.15)' }} />
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl"
+          style={{ color: 'var(--adm-text-muted)' }}
+        >
+          <Menu size={19} />
+          <span className="text-[9px] font-semibold">More</span>
+        </button>
+      </nav>
+
+      {/* ══════════════════════════════════════════════
+          MOBILE – Full Drawer
+         ══════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/30 lg:hidden"
+              style={{ backdropFilter: 'blur(4px)' }}
+              onClick={() => setDrawerOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="fixed inset-y-0 left-0 z-50 flex flex-col lg:hidden adm-glass-panel"
+              style={{ width: '264px', borderRadius: '0 20px 20px 0', borderLeft: 'none' }}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+                style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow"
+                    style={{ background: 'linear-gradient(135deg, #7C3AED, #A78BFA)' }}
+                  >
+                    S
+                  </div>
+                  <span className="font-bold text-sm" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>SENSEI Admin</span>
+                </div>
+                <button onClick={() => setDrawerOpen(false)} style={{ color: 'var(--adm-text-muted)' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* User */}
+              <div className="px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}>
+                <div className="flex items-center gap-3 p-2.5 rounded-xl" style={{ background: 'rgba(124,58,237,0.06)' }}>
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow"
+                    style={{ background: 'linear-gradient(135deg, #7C3AED, #C084FC)' }}
+                  >
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>{user.name}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--adm-text-muted)' }}>Super Administrator</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nav */}
+              <nav className="flex-1 overflow-y-auto adm-scrollbar px-3 py-3 space-y-0.5">
+                {NAV_ITEMS.map((n) => {
+                  const active = isActive(n.href);
+                  return (
+                    <Link
+                      key={n.href}
+                      href={n.href}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150"
+                      style={{
+                        background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
+                        color: active ? 'var(--adm-accent)' : 'var(--adm-text-sub)',
+                      }}
+                    >
+                      <n.icon size={16} style={{ color: active ? 'var(--adm-accent)' : 'var(--adm-text-muted)' }} />
+                      {n.label}
+                      {active && <ChevronRight size={13} className="ml-auto" style={{ color: 'var(--adm-accent)' }} />}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="px-3 pb-5 pt-2 flex-shrink-0" style={{ borderTop: '1px solid rgba(124,58,237,0.1)' }}>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-all"
+                  style={{ color: '#EF4444' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
