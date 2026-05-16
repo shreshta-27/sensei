@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, Plus, X, Loader2, Radio, Lock, Trash2 } from 'lucide-react';
+import { 
+  BarChart3, Plus, Lock, Trash2, X, Loader2 
+} from 'lucide-react';
 import dynamic from 'next/dynamic';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { useSocket } from '@/hooks/useSocket';
-import PageTransition from '@/components/teacher/PageTransition';
-import GlowCard from '@/components/teacher/GlowCard';
-import EmptyState from '@/components/teacher/EmptyState';
-import { TableSkeleton } from '@/components/teacher/LoadingSkeleton';
+import PaperSheet from '@/components/teacher/PaperSheet';
 import type { Poll } from '@/types';
 
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
@@ -29,8 +28,6 @@ export default function PollsPage() {
   const [selectedPoll, setSelectedPoll] = useState<Poll | null>(null);
   const [results, setResults] = useState<any[] | null>(null);
   const { on } = useSocket('/teacher');
-
-
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [classId, setClassId] = useState('');
@@ -92,153 +89,238 @@ export default function PollsPage() {
     }
   };
 
-  if (loading) return <TableSkeleton rows={4} />;
+  if (loading && polls.length === 0) return <div className="p-8 text-center handwriting text-2xl">Collecting poll data...</div>;
 
   return (
-    <PageTransition>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="font-faculty-heading text-2xl font-bold text-faculty-text">Live Polls</h1>
-            <p className="font-faculty text-sm text-faculty-text-secondary mt-1">Create and manage real-time class polls</p>
-          </div>
-          <button onClick={() => setShowCreate(true)} className="faculty-btn flex items-center gap-2">
-            <Plus size={16} /> Create Poll
-          </button>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-4xl font-black text-[#1A1A1A]">Live Polls</h1>
+          <p className="handwriting text-xl text-gray-500 font-medium">Capture real-time classroom insights</p>
         </div>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 flex items-center gap-2 hover:scale-105 transition-all"
+        >
+          <Plus size={20} /> Create New Poll
+        </button>
+      </div>
 
+      {}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {polls.length === 0 ? (
-          <EmptyState icon={BarChart3} title="No Polls Yet" description="Create your first poll to engage students in real-time." action={{ label: 'Create Poll', onClick: () => setShowCreate(true) }} />
+           <div className="col-span-full">
+              <PaperSheet className="text-center py-20">
+                 <BarChart3 size={64} className="mx-auto text-gray-200 mb-4" />
+                 <h2 className="text-2xl font-bold text-gray-800">No active polls</h2>
+                 <p className="text-gray-500">Engage your students by launching a quick poll.</p>
+              </PaperSheet>
+           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {polls.map((poll, i) => (
-              <motion.div
-                key={poll._id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="faculty-card p-4"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {poll.isOpen ? (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-faculty-success/10 text-faculty-success">
-                        <Radio size={10} className="animate-pulse" /> LIVE
+          polls.map((poll, i) => (
+            <motion.div
+              key={poll._id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <PaperSheet className="h-full flex flex-col justify-between hover:border-purple-300 transition-all">
+                <div>
+                   <div className="flex items-center justify-between mb-4">
+                      {poll.isOpen ? (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-100 rounded-full">
+                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                           <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">LIVE</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-gray-50 border border-gray-100 rounded-full">
+                           <Lock size={12} className="text-gray-400" />
+                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">CLOSED</span>
+                        </div>
+                      )}
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                         {poll.responses?.length || 0} RESPONSES
                       </span>
-                    ) : (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-faculty-text-secondary/10 text-faculty-text-secondary">
-                        <Lock size={10} /> CLOSED
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-faculty text-[10px] text-faculty-text-secondary">
-                    {poll.responses?.length || 0} responses
-                  </span>
-                </div>
-                <h3 className="font-faculty text-sm text-faculty-text mb-3">{poll.question}</h3>
-                <div className="space-y-1.5 mb-4">
-                  {poll.options.map((opt, oi) => (
-                    <div key={oi} className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-faculty-bg/50 border border-faculty-border/50">
-                      <span className="font-faculty-data text-[10px] text-faculty-ember">{String.fromCharCode(65 + oi)}</span>
-                      <span className="font-faculty text-xs text-faculty-text-secondary">{opt}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => viewResults(poll)} className="faculty-btn-ghost text-xs px-3 py-1.5 flex-1">
-                    View Results
-                  </button>
-                  {poll.isOpen && (
-                    <button onClick={() => closePoll(poll._id)} className="p-2 rounded-lg hover:bg-faculty-danger/10 text-faculty-text-secondary hover:text-faculty-danger transition-colors">
-                      <Lock size={14} />
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        {}
-        <AnimatePresence>
-          {showCreate && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-faculty-surface border border-faculty-border rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-faculty-heading text-lg font-bold text-faculty-text">Create Poll</h2>
-                  <button onClick={() => setShowCreate(false)} className="p-2 rounded-lg hover:bg-faculty-surface-hover text-faculty-text-secondary"><X size={18} /></button>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="font-faculty text-xs text-faculty-text-secondary uppercase tracking-wider mb-1.5 block">Question</label>
-                    <input value={question} onChange={e => setQuestion(e.target.value)} className="faculty-input w-full" placeholder="What do you want to ask?" />
-                  </div>
-                  <div>
-                    <label className="font-faculty text-xs text-faculty-text-secondary uppercase tracking-wider mb-1.5 block">Options</label>
-                    <div className="space-y-2">
-                      {options.map((opt, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <span className="font-faculty-data text-xs text-faculty-ember w-5">{String.fromCharCode(65 + i)}</span>
-                          <input value={opt} onChange={e => { const n = [...options]; n[i] = e.target.value; setOptions(n); }} className="faculty-input flex-1" placeholder={`Option ${i + 1}`} />
-                          {options.length > 2 && (
-                            <button onClick={() => setOptions(options.filter((_, idx) => idx !== i))} className="p-1.5 text-faculty-text-secondary hover:text-faculty-danger"><Trash2 size={14} /></button>
-                          )}
+                   </div>
+                   
+                   <h3 className="text-lg font-bold text-gray-800 mb-4 line-clamp-2">{poll.question}</h3>
+                   
+                   <div className="space-y-2 mb-6">
+                      {poll.options.map((opt, oi) => (
+                        <div key={oi} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-purple-200 transition-all">
+                           <div className="w-6 h-6 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-[10px] font-black text-purple-600">
+                              {String.fromCharCode(65 + oi)}
+                           </div>
+                           <span className="text-xs font-bold text-gray-600">{opt}</span>
                         </div>
                       ))}
-                    </div>
-                    {options.length < 6 && (
-                      <button onClick={() => setOptions([...options, ''])} className="font-faculty text-xs text-faculty-ember hover:underline mt-2">+ Add Option</button>
-                    )}
-                  </div>
-                  <div>
-                    <label className="font-faculty text-xs text-faculty-text-secondary uppercase tracking-wider mb-1.5 block">Target Class (optional)</label>
-                    <select value={classId} onChange={e => setClassId(e.target.value)} className="faculty-input w-full text-sm">
-                      <option value="">All Students (Global)</option>
-                      {classList.map(c => (
-                        <option key={c._id} value={c._id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <button onClick={createPoll} disabled={creating} className="faculty-btn w-full flex items-center justify-center gap-2">
-                    {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                    {creating ? 'Creating...' : 'Create Poll'}
-                  </button>
+                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {}
-        <AnimatePresence>
-          {selectedPoll && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setSelectedPoll(null); setResults(null); }}>
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-lg bg-faculty-surface border border-faculty-border rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-faculty-heading text-lg font-bold text-faculty-text">Poll Results</h2>
-                  <button onClick={() => { setSelectedPoll(null); setResults(null); }} className="p-2 rounded-lg hover:bg-faculty-surface-hover text-faculty-text-secondary"><X size={18} /></button>
+                
+                <div className="flex items-center gap-2">
+                   <button 
+                     onClick={() => viewResults(poll)}
+                     className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-50 transition-all shadow-sm"
+                   >
+                     Analyze Results
+                   </button>
+                   {poll.isOpen && (
+                     <button 
+                       onClick={() => closePoll(poll._id)}
+                       className="w-11 h-11 flex items-center justify-center border border-red-100 text-red-400 rounded-xl hover:bg-red-50 transition-all"
+                       title="Close Poll"
+                     >
+                       <Lock size={16} />
+                     </button>
+                   )}
                 </div>
-                <p className="font-faculty text-sm text-faculty-text mb-4">{selectedPoll.question}</p>
-                {results && results.length > 0 ? (
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChartComponent data={results.map(r => ({ name: r.option || r.name, count: r.count || r.value || 0 }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--f-border)" />
-                        <XAxis dataKey="name" tick={{ fill: 'var(--f-text-secondary)', fontSize: 11 }} />
-                        <YAxis tick={{ fill: 'var(--f-text-secondary)', fontSize: 11 }} />
-                        <Tooltip contentStyle={{ background: 'var(--f-surface)', border: '1px solid var(--f-border)', borderRadius: '8px', color: 'var(--f-text)', fontSize: '12px' }} />
-                        <Bar dataKey="count" fill="var(--f-ember)" radius={[4, 4, 0, 0]} />
-                      </BarChartComponent>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <p className="font-faculty text-sm text-faculty-text-secondary text-center py-8">No responses yet.</p>
-                )}
-              </motion.div>
+              </PaperSheet>
             </motion.div>
-          )}
-        </AnimatePresence>
+          ))
+        )}
       </div>
-    </PageTransition>
+
+      {}
+      <AnimatePresence>
+        {showCreate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowCreate(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg"
+            >
+              <PaperSheet title="LAUNCH POLL">
+                 <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">The Question</label>
+                      <input 
+                        value={question}
+                        onChange={e => setQuestion(e.target.value)}
+                        placeholder="e.g. Do you understand the concept of recursion?" 
+                        className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-3 px-4 focus:border-b-purple-500 outline-none handwriting text-xl transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Response Options</label>
+                       {options.map((opt, i) => (
+                         <div key={i} className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-bold">
+                               {String.fromCharCode(65 + i)}
+                            </div>
+                            <input 
+                              value={opt}
+                              onChange={e => { const n = [...options]; n[i] = e.target.value; setOptions(n); }}
+                              className="flex-1 bg-gray-50 border-b border-gray-200 py-2 px-1 focus:border-purple-400 outline-none handwriting text-lg transition-all"
+                              placeholder={`Option ${i + 1}`}
+                            />
+                            {options.length > 2 && (
+                               <button onClick={() => setOptions(options.filter((_, idx) => idx !== i))} className="p-2 text-gray-300 hover:text-red-400">
+                                  <Trash2 size={16} />
+                               </button>
+                            )}
+                         </div>
+                       ))}
+                       {options.length < 6 && (
+                          <button 
+                            onClick={() => setOptions([...options, ''])}
+                            className="text-[10px] font-black text-purple-600 uppercase tracking-widest hover:underline mt-2 ml-1"
+                          >
+                             + Add Choice
+                          </button>
+                       )}
+                    </div>
+
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Classroom (Optional)</label>
+                       <select 
+                         value={classId} 
+                         onChange={e => setClassId(e.target.value)}
+                         className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-2.5 px-4 focus:border-b-purple-500 outline-none font-bold text-gray-600 transition-all appearance-none"
+                       >
+                          <option value="">GLOBAL (ALL CLASSES)</option>
+                          {classList.map(c => (
+                            <option key={c._id} value={c._id}>{c.name.toUpperCase()}</option>
+                          ))}
+                       </select>
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                       <button onClick={() => setShowCreate(false)} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition-all">Cancel</button>
+                       <button 
+                         onClick={createPoll}
+                         disabled={creating}
+                         className="flex-1 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 hover:scale-105 transition-all disabled:opacity-50"
+                       >
+                         {creating ? 'Launching...' : 'Broadcast Poll'}
+                       </button>
+                    </div>
+                 </div>
+              </PaperSheet>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {}
+      <AnimatePresence>
+        {selectedPoll && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => { setSelectedPoll(null); setResults(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg"
+            >
+              <PaperSheet title="POLL ANALYSIS">
+                 <div className="mb-6">
+                    <h3 className="text-xl font-bold text-gray-800">{selectedPoll.question}</h3>
+                    <p className="handwriting text-gray-500 text-lg">Statistical distribution of responses</p>
+                 </div>
+                 
+                 {results && results.length > 0 ? (
+                    <div className="h-64 mb-6">
+                       <ResponsiveContainer width="100%" height="100%">
+                          <BarChartComponent data={results.map(r => ({ name: r.option || r.name, count: r.count || r.value || 0 }))}>
+                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 10, fontWeight: 700 }} />
+                             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 10, fontWeight: 700 }} />
+                             <Tooltip cursor={{ fill: '#F9FAFB' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                             <Bar dataKey="count" fill="#9333EA" radius={[8, 8, 0, 0]} barSize={40} />
+                          </BarChartComponent>
+                       </ResponsiveContainer>
+                    </div>
+                 ) : (
+                    <div className="py-20 text-center italic text-gray-400">Waiting for student input...</div>
+                 )}
+                 
+                 <button 
+                   onClick={() => { setSelectedPoll(null); setResults(null); }}
+                   className="w-full py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                 >
+                    Close Analysis
+                 </button>
+              </PaperSheet>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

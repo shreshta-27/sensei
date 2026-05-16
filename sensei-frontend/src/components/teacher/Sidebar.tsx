@@ -8,168 +8,96 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, FileText, Activity, Upload,
   AlertTriangle, BarChart3, HelpCircle, Sparkles, User,
-  LogOut, ChevronRight, Flame
+  LogOut, Settings, Calendar, BookOpen, BrainCircuit
 } from 'lucide-react';
+import Image from 'next/image';
 
 const navItems = [
   { href: '/teacher', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/teacher/classes', icon: Users, label: 'Classes' },
-  { href: '/teacher/grading', icon: FileText, label: 'AI Grading' },
-  { href: '/teacher/behavior-analyzer', icon: Activity, label: 'Behavior' },
-  { href: '/teacher/upload', icon: Upload, label: 'Upload Data' },
+  { href: '/teacher/classes', icon: Users, label: 'My Classes' },
+  { href: '/teacher/students', icon: Users, label: 'Students' },
+  { href: '/teacher/ai-insights', icon: BrainCircuit, label: 'AI Insights' },
   { href: '/teacher/interventions', icon: AlertTriangle, label: 'Interventions' },
-  { href: '/teacher/polls', icon: BarChart3, label: 'Live Polls' },
-  { href: '/teacher/help-queue', icon: HelpCircle, label: 'Help Queue' },
-  { href: '/teacher/ai-content', icon: Sparkles, label: 'AI Content' },
-  { href: '/teacher/profile', icon: User, label: 'Profile' },
+  { href: '/teacher/grading', icon: FileText, label: 'Assessments' },
+  { href: '/teacher/reports', icon: BarChart3, label: 'Reports' },
+  { href: '/teacher/upload', icon: Upload, label: 'Resources' },
+  { href: '/teacher/calendar', icon: Calendar, label: 'Calendar' },
+  { href: '/teacher/profile', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar() {
-  const [expanded, setExpanded] = useState(false);
-  const [hoverState, setHoverState] = useState<{ label: string; x: number; y: number } | null>(null);
+  const [expanded, setExpanded] = useState(true);
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout } = useAuthStore();
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
+  const { user } = useAuthStore();
 
   return (
     <motion.aside
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      animate={{ width: expanded ? 240 : 72 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 h-screen z-50 hidden md:flex flex-col faculty-glass"
-      style={{ borderRight: '1px solid var(--f-border)' }}
+      animate={{ width: expanded ? 260 : 80 }}
+      className="fixed left-0 top-0 h-screen z-50 hidden md:flex flex-col bg-white border-r border-[#E0E0E0] shadow-sm"
     >
-      {}
-      <AnimatePresence>
-        {hoverState && !expanded && (
-          <motion.div 
-            key="viewport-tooltip-sidebar"
-            initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5 }}
-            transition={{ duration: 0.1 }}
-            className="fixed z-[100] flex items-center gap-2 bg-faculty-surface-hover/90 backdrop-blur-md text-faculty-text px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap border border-faculty-border shadow-lg"
-            style={{ 
-              left: hoverState.x, 
-              top: hoverState.y, 
-              transform: 'translateY(-50%)',
-            }}
-          >
-            <span className="text-xs font-semibold">{hoverState.label}</span>
-            {}
-            <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-faculty-surface-hover rotate-45 border-l border-b border-faculty-border" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-faculty-border shrink-0">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-faculty-ember to-faculty-ember-light flex items-center justify-center shrink-0">
-          <Flame size={20} className="text-white" />
+      <div className="p-6 flex items-center gap-3">
+        <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
+          <BrainCircuit className="text-white" size={24} />
         </div>
-        <AnimatePresence>
-          {expanded && (
-            <motion.span
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="font-faculty-heading text-lg font-bold text-faculty-text whitespace-nowrap"
-            >
-              SENSEI
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {expanded && (
+          <div className="flex flex-col">
+            <span className="font-bold text-xl tracking-tight text-[#1A1A1A]">SENSEI</span>
+            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold -mt-1">AI CAMPUS OS</span>
+          </div>
+        )}
       </div>
 
-      {}
-      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto faculty-scrollbar">
+      <div className="px-4 mb-8">
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+          <div className="w-10 h-10 rounded-full bg-purple-100 border-2 border-white shadow-sm overflow-hidden">
+             {user?.avatar ? (
+               <Image src={user.avatar} alt="avatar" width={40} height={40} />
+             ) : (
+               <div className="w-full h-full flex items-center justify-center text-purple-600 font-bold">
+                 {user?.name?.charAt(0) || 'P'}
+               </div>
+             )}
+          </div>
+          {expanded && (
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-gray-800 truncate">Dr. Priya Sharma</span>
+              <span className="text-[11px] text-gray-500 font-medium">Computer Science</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <nav className="flex-1 px-3 space-y-1">
         {navItems.map((item) => {
           const active = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${
-                active
-                  ? 'bg-gradient-to-r from-faculty-ember/15 to-transparent text-faculty-ember'
-                  : 'text-faculty-text-secondary hover:text-faculty-text hover:bg-faculty-surface-hover'
-              }`}
-              onMouseEnter={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setHoverState({ label: item.label, x: rect.right + 12, y: rect.top + rect.height / 2 });
-              }}
-              onMouseLeave={() => setHoverState(null)}
+              className={`faculty-sidebar-item ${active ? 'active shadow-lg shadow-purple-200' : ''}`}
             >
-              {active && (
-                <motion.div
-                  layoutId="sidebar-active"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-faculty-ember"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                />
-              )}
-              <item.icon size={20} className={`shrink-0 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
-              <AnimatePresence>
-                {expanded && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className="font-faculty text-sm whitespace-nowrap"
-                  >
-                    {item.label}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-              {active && expanded && (
-                <ChevronRight size={14} className="ml-auto text-faculty-ember" />
-              )}
+              <item.icon size={20} />
+              {expanded && <span className="text-[14px] font-semibold">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {}
-      <div className="border-t border-faculty-border p-3 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-faculty-ember to-faculty-ember-light flex items-center justify-center text-white text-sm font-bold shrink-0">
-            {user?.name?.charAt(0) || 'T'}
+      <div className="p-4 mt-auto">
+        <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100 relative overflow-hidden group cursor-pointer hover:bg-purple-100 transition-colors">
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <BrainCircuit className="text-purple-600 mb-2" size={32} />
+            {expanded && (
+              <>
+                <span className="text-xs font-bold text-purple-800 mb-1">Teaching Assistant</span>
+                <span className="text-[10px] text-purple-600 font-medium mb-3">Online</span>
+                <button className="w-full py-2 bg-white text-purple-600 rounded-xl text-[11px] font-bold shadow-sm hover:shadow-md transition-all">
+                   Ask Sensei AI →
+                </button>
+              </>
+            )}
           </div>
-          <AnimatePresence>
-            {expanded && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 min-w-0"
-              >
-                <p className="font-faculty text-sm text-faculty-text truncate">{user?.name || 'Faculty'}</p>
-                <p className="font-faculty text-xs text-faculty-text-secondary">Faculty</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {expanded && (
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={handleLogout}
-                onMouseEnter={(e: any) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setHoverState({ label: 'Logout', x: rect.right + 12, y: rect.top + rect.height / 2 });
-                }}
-                onMouseLeave={() => setHoverState(null)}
-                className="p-1.5 rounded-lg hover:bg-faculty-danger/10 text-faculty-text-secondary hover:text-faculty-danger transition-colors"
-              >
-                <LogOut size={16} />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-purple-200/50 rounded-full blur-2xl group-hover:bg-purple-300/50 transition-all" />
         </div>
       </div>
     </motion.aside>

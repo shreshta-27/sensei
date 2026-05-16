@@ -1,26 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Users, AlertTriangle, HelpCircle, Star, BookOpen,
-  TrendingUp, BarChart3, Lightbulb, ArrowRight, Zap, Sparkles
-} from 'lucide-react';
-import dynamic from 'next/dynamic';
-import api from '@/lib/axios';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSocket } from '@/hooks/useSocket';
+import { motion } from 'framer-motion';
+import { 
+  BookOpen, Users, AlertTriangle, TrendingUp, Zap, 
+  ArrowRight, Calendar, FileText, Activity, BarChart3 
+} from 'lucide-react';
+import api from '@/lib/axios';
 import toast from 'react-hot-toast';
-import PageTransition from '@/components/teacher/PageTransition';
-import StatsCard from '@/components/teacher/StatsCard';
-import GlowCard from '@/components/teacher/GlowCard';
+import { useSocket } from '@/hooks/useSocket';
 import { PageSkeleton } from '@/components/teacher/LoadingSkeleton';
-
-const ResponsiveContainer = dynamic(() => import('recharts').then((m) => m.ResponsiveContainer), { ssr: false });
-const PieChart = dynamic(() => import('recharts').then((m) => m.PieChart), { ssr: false });
-const Pie = dynamic(() => import('recharts').then((m) => m.Pie), { ssr: false });
-const Cell = dynamic(() => import('recharts').then((m) => m.Cell), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then((m) => m.Tooltip), { ssr: false });
+import StickyNote from '@/components/teacher/StickyNote';
+import PaperSheet from '@/components/teacher/PaperSheet';
 
 export default function TeacherDashboard() {
   const [data, setData] = useState<Record<string, any> | null>(null);
@@ -37,15 +29,7 @@ export default function TeacherDashboard() {
       toast.success('New help ticket received!', { icon: '🙋' });
     });
 
-    const offPollNew = on('poll:new', () => {
-      setData(prev => prev ? { ...prev, pollActivity: { ...prev.pollActivity, active: (prev.pollActivity?.active || 0) + 1 } } : null);
-    });
-
-    const offPollClosed = on('poll:closed', () => {
-      setData(prev => prev ? { ...prev, pollActivity: { ...prev.pollActivity, active: Math.max(0, (prev.pollActivity?.active || 1) - 1) } } : null);
-    });
-
-    return () => { offHelp(); offPollNew(); offPollClosed(); };
+    return () => { offHelp(); };
   }, [on]);
 
   const fetchDashboard = () => {
@@ -58,208 +42,167 @@ export default function TeacherDashboard() {
   if (loading) return <PageSkeleton />;
 
   if (error) return (
-    <PageTransition>
-      <div className="flex flex-col items-center justify-center h-64">
-        <p className="font-faculty-heading text-lg text-faculty-danger">⚠️ {error}</p>
-        <button onClick={fetchDashboard} className="faculty-btn mt-4">Retry</button>
-      </div>
-    </PageTransition>
+    <div className="flex flex-col items-center justify-center h-[70vh]">
+      <PaperSheet className="max-w-md text-center">
+         <AlertTriangle size={48} className="mx-auto text-red-500 mb-4" />
+         <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+         <p className="text-gray-600 mb-6">{error}</p>
+         <button onClick={fetchDashboard} className="px-6 py-2 bg-purple-600 text-white rounded-xl font-bold">Retry</button>
+      </PaperSheet>
+    </div>
   );
 
   if (!data) return null;
 
-  const riskPie = [
-    { name: 'Safe', value: ((data.totalStudents as number) || 0) - ((data.atRiskCount as number) || 0) - ((data.criticalCount as number) || 0), color: '#10B981' },
-    { name: 'At Risk', value: (data.atRiskCount as number) || 0, color: '#F59E0B' },
-    { name: 'Critical', value: (data.criticalCount as number) || 0, color: '#EF4444' },
-  ];
-
   const stats = [
-    { label: 'My Students', value: data.totalStudents || 0, icon: Users, color: '#10B981' },
-    { label: 'At Risk', value: data.atRiskCount || 0, icon: AlertTriangle, color: '#F59E0B' },
-    { label: 'Help Tickets', value: data.pendingHelpTickets || 0, icon: HelpCircle, color: '#EF4444' },
-    { label: 'Effectiveness', value: `${data.effectivenessScore || 0}%`, icon: Star, color: '#FF6B35' },
-    { label: 'Subjects', value: ((data.subjects as string[]) || []).length, icon: BookOpen, color: '#8B5CF6' },
-    { label: 'Pass Rate', value: `${data.classPassRate || 0}%`, icon: TrendingUp, color: '#14B8A6' },
-    { label: 'Active Polls', value: (data.pollActivity as any)?.active || 0, icon: BarChart3, color: '#FF9F1C' },
-    { label: 'Critical', value: data.criticalCount || 0, icon: Zap, color: '#EF4444' },
+    { label: 'MY CLASSES', value: (data.subjects as string[])?.length || 6, icon: BookOpen, color: 'blue' as const },
+    { label: 'STUDENTS', value: data.totalStudents || 128, icon: Users, color: 'yellow' as const },
+    { label: 'AT RISK STUDENTS', value: data.atRiskCount || 18, icon: AlertTriangle, color: 'pink' as const },
+    { label: 'CLASS ENGAGEMENT', value: `${data.engagement || 76}%`, icon: TrendingUp, color: 'green' as const },
+    { label: 'INTERVENTIONS', value: data.pendingHelpTickets || 23, icon: Zap, color: 'purple' as const },
   ];
 
-  const recommendations: string[] = (data.teachingRecommendations as string[]) || [
-    'Focus on at-risk students with personalized sessions.',
-    'Use AI quiz feature for adaptive assessments.',
-    'Schedule interventions for low-attendance students.',
-  ];
-
-  const quickActions = [
-    { label: 'Live Polls', href: '/teacher/polls', icon: BarChart3, color: '#FF9F1C' },
-    { label: 'Interventions', href: '/teacher/interventions', icon: AlertTriangle, color: '#EF4444' },
-    { label: 'Help Queue', href: '/teacher/help-queue', icon: HelpCircle, color: '#14B8A6' },
-    { label: 'AI Content', href: '/teacher/ai-content', icon: Sparkles, color: '#8B5CF6' },
+  const studentsToWatch = [
+    { name: 'Rahul Verma', status: 'Performance declining in DS Algo', risk: 'High', color: 'red' },
+    { name: 'Sneha Iyer', status: 'Low attendance this week', risk: 'Medium', color: 'orange' },
+    { name: 'Arjun Nair', status: 'Missed 3 assignments', risk: 'High', color: 'red' },
   ];
 
   return (
-    <PageTransition>
-      <div className="space-y-6">
-        {}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-          <div>
-            <h1 className="font-faculty-heading text-2xl md:text-3xl font-bold text-faculty-text">
-              Faculty Dashboard
-            </h1>
-            <p className="font-faculty text-sm text-faculty-text-secondary mt-1">
-              Welcome back — here&apos;s your class overview & AI insights
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-faculty-success animate-glow-pulse" />
-            <span className="font-faculty text-xs text-faculty-text-secondary">Live</span>
-          </div>
-        </div>
-
-        {}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {stats.map((stat, i) => (
-            <StatsCard
-              key={stat.label}
-              label={stat.label}
-              value={stat.value}
-              icon={stat.icon}
-              color={stat.color}
-              delay={i * 0.05}
-            />
-          ))}
-        </div>
-
-        {}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {}
-          <GlowCard className="lg:col-span-1" delay={0.2}>
-            <h3 className="font-faculty-heading text-sm font-semibold text-faculty-text mb-4">Student Risk Overview</h3>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={riskPie}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {riskPie.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--f-surface)',
-                      border: '1px solid var(--f-border)',
-                      borderRadius: '8px',
-                      color: 'var(--f-text)',
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '12px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex items-center justify-center gap-4 mt-2">
-              {riskPie.map((item) => (
-                <div key={item.name} className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
-                  <span className="font-faculty text-xs text-faculty-text-secondary">{item.name}</span>
-                </div>
-              ))}
-            </div>
-          </GlowCard>
-
-          {}
-          <GlowCard className="lg:col-span-2" glowColor="purple" delay={0.3}>
-            <div className="flex items-center gap-2 mb-4">
-              <Lightbulb size={18} className="text-faculty-ember-light" />
-              <h3 className="font-faculty-heading text-sm font-semibold text-faculty-text">AI Recommendations</h3>
-            </div>
-            <div className="space-y-3">
-              {recommendations.map((rec, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + i * 0.1 }}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-faculty-bg/50 border border-faculty-border/50"
-                >
-                  <span className="font-faculty-data text-xs text-faculty-ember font-bold mt-0.5">0{i + 1}</span>
-                  <p className="font-faculty text-sm text-faculty-text-secondary">{rec}</p>
-                </motion.div>
-              ))}
-            </div>
-          </GlowCard>
-        </div>
-
-        {}
-        <div>
-          <h3 className="font-faculty-heading text-sm font-semibold text-faculty-text mb-3">Quick Actions</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {quickActions.map((action, i) => (
-              <motion.button
-                key={action.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + i * 0.05 }}
-                onClick={() => router.push(action.href)}
-                className="faculty-card p-4 flex flex-col items-center gap-2 group hover:border-opacity-50 text-center"
-                style={{ '--hover-color': action.color } as any}
-              >
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ background: `${action.color}15` }}
-                >
-                  <action.icon size={20} style={{ color: action.color }} />
-                </div>
-                <span className="font-faculty text-xs text-faculty-text-secondary group-hover:text-faculty-text transition-colors">{action.label}</span>
-                <ArrowRight size={12} className="text-faculty-text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
-              </motion.button>
-            ))}
-          </div>
-        </div>
-
-        {}
-        {data.recentInterventions && (data.recentInterventions as any[]).length > 0 && (
-          <GlowCard delay={0.6}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-faculty-heading text-sm font-semibold text-faculty-text">Recent Interventions</h3>
-              <button onClick={() => router.push('/teacher/interventions')} className="font-faculty text-xs text-faculty-ember hover:underline">
-                View All →
-              </button>
-            </div>
-            <div className="space-y-2">
-              {(data.recentInterventions as any[]).slice(0, 4).map((iv: any, i: number) => (
-                <div key={iv._id || i} className="flex items-center gap-3 p-3 rounded-lg bg-faculty-bg/50 border border-faculty-border/50">
-                  <div className={`w-2 h-2 rounded-full ${
-                    iv.urgency === 'critical' ? 'bg-faculty-danger' :
-                    iv.urgency === 'high' ? 'bg-faculty-warning' : 'bg-faculty-teal'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-faculty text-sm text-faculty-text truncate">{iv.message}</p>
-                    <p className="font-faculty text-xs text-faculty-text-secondary">
-                      {typeof iv.studentId === 'object' ? iv.studentId.name : 'Student'} • {iv.status}
-                    </p>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    iv.status === 'resolved' ? 'bg-faculty-success/10 text-faculty-success' :
-                    iv.status === 'in-progress' ? 'bg-faculty-warning/10 text-faculty-warning' :
-                    'bg-faculty-text-secondary/10 text-faculty-text-secondary'
-                  }`}>
-                    {iv.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </GlowCard>
-        )}
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {}
+      <div className="flex flex-col gap-1">
+        <h1 className="font-serif text-4xl font-black text-[#1A1A1A] flex items-center gap-3">
+          Faculty Command Desk
+          <span className="text-2xl">✨</span>
+        </h1>
+        <p className="handwriting text-xl text-gray-500 font-medium">
+          Your AI copilot for smarter teaching and impactful interventions.
+        </p>
       </div>
-    </PageTransition>
+
+      {}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {stats.map((stat, i) => (
+          <StickyNote key={stat.label} color={stat.color} rotation={i % 2 === 0 ? -1 : 1} delay={i * 0.1}>
+            <span className="text-[10px] font-black tracking-widest text-gray-600 mb-1">{stat.label}</span>
+            <div className="flex items-end justify-between mt-auto">
+              <span className="text-4xl font-black text-[#1A1A1A]">{stat.value}</span>
+              <stat.icon size={24} className="text-gray-400 mb-1" />
+            </div>
+            {stat.label === 'CLASS ENGAGEMENT' && (
+               <div className="flex items-center gap-1 mt-2 text-[10px] font-bold text-green-600">
+                 <TrendingUp size={12} />
+                 <span>↑ 6% vs last month</span>
+               </div>
+            )}
+          </StickyNote>
+        ))}
+      </div>
+
+      {}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {}
+        <div className="lg:col-span-8 space-y-8">
+          <PaperSheet title="CLASSROOM PULSE" className="min-h-[400px]">
+            <p className="handwriting text-gray-500 -mt-4 mb-8">Live pulse of engagement in your classes</p>
+            <div className="h-[300px] w-full bg-gray-50/50 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-100">
+               <span className="text-gray-400 font-medium italic">Engagement Radar Chart Placeholder</span>
+            </div>
+            <button className="mt-8 px-6 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:shadow-lg hover:shadow-purple-200 transition-all">
+              View Detailed Heatmap <ArrowRight size={16} />
+            </button>
+          </PaperSheet>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <PaperSheet title="STUDENTS TO WATCH">
+              <div className="space-y-6">
+                {studentsToWatch.map((student, i) => (
+                  <div key={i} className="flex items-center gap-4 group cursor-pointer">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 shrink-0 overflow-hidden border-2 border-white shadow-sm">
+                       <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">
+                         {student.name.charAt(0)}
+                       </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-800">{student.name}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          student.risk === 'High' ? 'bg-red-50 text-red-500' : 'bg-orange-50 text-orange-500'
+                        }`}>
+                          {student.risk}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 truncate">{student.status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </PaperSheet>
+
+            <PaperSheet title="QUICK ACTIONS" className="bg-[#FFF9C4]/30 border-[#FFF9C4]">
+               <div className="grid grid-cols-1 gap-3">
+                 {[
+                   { label: 'Schedule Remedial Class', icon: Calendar, color: 'text-red-500' },
+                   { label: 'Share Revision Notes', icon: FileText, color: 'text-orange-500' },
+                   { label: 'Contact Parents', icon: Users, color: 'text-blue-500' },
+                   { label: 'Wellness Check', icon: Activity, color: 'text-pink-500' },
+                   { label: 'Create Poll / Quiz', icon: BarChart3, color: 'text-purple-500' },
+                 ].map((action, i) => (
+                   <button key={i} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-sm transition-all group">
+                     <action.icon size={18} className={`${action.color} group-hover:scale-110 transition-transform`} />
+                     <span className="text-sm font-bold text-gray-700">{action.label}</span>
+                   </button>
+                 ))}
+               </div>
+            </PaperSheet>
+          </div>
+        </div>
+
+        {}
+        <div className="lg:col-span-4 space-y-8">
+          <PaperSheet title="AI INTERVENTION FEED">
+             <div className="space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gray-100">
+               {[
+                 { time: '10:10 AM', event: 'Attendance drop detected', detail: '8 students in Fullstack - Sec B', risk: 'High', color: 'bg-red-500' },
+                 { time: '09:15 AM', event: 'Performance decline in DS Algo', detail: '3 students need support', risk: 'Medium', color: 'bg-orange-500' },
+                 { time: '08:45 AM', event: 'Wellness anomaly detected', detail: '2 students need attention', risk: 'High', color: 'bg-red-500' },
+               ].map((item, i) => (
+                 <div key={i} className="relative pl-8 group">
+                   <div className={`absolute left-0 top-1.5 w-[24px] h-[24px] rounded-full ${item.color} border-4 border-white shadow-sm z-10`} />
+                   <div className="flex flex-col gap-0.5">
+                     <span className="text-[10px] font-bold text-gray-400">{item.time}</span>
+                     <span className="text-sm font-bold text-gray-800">{item.event}</span>
+                     <span className="text-xs text-gray-500">{item.detail}</span>
+                     <span className={`text-[9px] font-black uppercase mt-1 ${item.risk === 'High' ? 'text-red-500' : 'text-orange-500'}`}>{item.risk}</span>
+                   </div>
+                 </div>
+               ))}
+             </div>
+          </PaperSheet>
+
+          <PaperSheet title="UPCOMING EVENTS">
+            <div className="space-y-6">
+               {[
+                 { date: 'May 18', event: 'Internal Assessment', subject: 'Fullstack - Section B' },
+                 { date: 'May 20', event: 'Parent Meeting', subject: '3 students' },
+                 { date: 'May 22', event: 'Remedial Class', subject: 'DBMS - Section A' },
+               ].map((event, i) => (
+                 <div key={i} className="flex gap-4">
+                   <div className="flex flex-col items-center justify-center shrink-0 w-12 h-12 bg-gray-50 rounded-xl border border-gray-100">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">{event.date.split(' ')[0]}</span>
+                      <span className="text-sm font-black text-gray-800 -mt-1">{event.date.split(' ')[1]}</span>
+                   </div>
+                   <div className="flex flex-col">
+                      <span className="text-sm font-bold text-gray-800">{event.event}</span>
+                      <span className="text-xs text-gray-500">{event.subject}</span>
+                   </div>
+                 </div>
+               ))}
+            </div>
+          </PaperSheet>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -15,6 +15,23 @@
   --text-parchment: #F5F0E8;
   --text-muted: #A09080;
 
+  --f-bg-desk: #F4F1EA;
+  --f-sidebar: #FFFFFF;
+  --f-accent: #8B5CF6;
+  --f-accent-light: #DDD6FE;
+  --f-note-yellow: #FFF9C4;
+  --f-note-pink: #FCE4EC;
+  --f-note-blue: #E1F5FE;
+  --f-note-green: #E8F5E9;
+  --f-note-orange: #FFF3E0;
+  --f-note-purple: #F3E5F5;
+  --f-ink: #2D3436;
+  --f-ink-muted: #636E72;
+  --f-border-paper: rgba(0,0,0,0.08);
+  --f-shadow-paper: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  --font-handwriting: 'Patrick Hand', cursive;
+  --font-serif: 'Cinzel', serif;
   
   --f-bg: #0F1117;
   --f-surface: #1A1D27;

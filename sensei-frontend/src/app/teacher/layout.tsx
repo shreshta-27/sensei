@@ -7,8 +7,8 @@ import dynamic from 'next/dynamic';
 import Sidebar from '@/components/teacher/Sidebar';
 import MobileNav from '@/components/teacher/MobileNav';
 
-const ThreeBackground = dynamic(() => import('@/components/teacher/ThreeBackground'), { ssr: false });
 const TeacherAIChatbot = dynamic(() => import('@/components/TeacherAIChatbot'), { ssr: false });
+import FacultyTopNav from '@/components/teacher/FacultyTopNav';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -21,14 +21,13 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   if (!user || user.role !== 'teacher') return null;
 
   return (
-    <div className="faculty-grid-bg min-h-screen font-faculty text-faculty-text faculty-scrollbar">
-      <ThreeBackground />
+    <div className="faculty-desk-bg min-h-screen text-[#2D3436] overflow-x-hidden">
       <Sidebar />
       <MobileNav />
 
-      {}
-      <main className="md:ml-[72px] pb-20 md:pb-0 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
+      <main className="md:ml-[260px] relative z-10 flex flex-col min-h-screen">
+        <FacultyTopNav />
+        <div className="flex-1 px-4 md:px-8 pb-8">
           {children}
         </div>
       </main>

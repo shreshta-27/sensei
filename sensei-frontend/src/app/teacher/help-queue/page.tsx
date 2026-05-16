@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, CheckCircle2, Clock, MessageSquare, RefreshCw, Send, Users } from 'lucide-react';
+import { 
+  HelpCircle, CheckCircle2, Clock, MessageSquare, 
+  RefreshCw, Users 
+} from 'lucide-react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import { useSocket } from '@/hooks/useSocket';
-import PageTransition from '@/components/teacher/PageTransition';
-import { TableSkeleton } from '@/components/teacher/LoadingSkeleton';
+import StickyNote from '@/components/teacher/StickyNote';
+import PaperSheet from '@/components/teacher/PaperSheet';
 
 interface Ticket {
   _id: string;
@@ -46,18 +49,11 @@ export default function TeacherHelpQueuePage() {
 
   useEffect(() => { 
     fetchTickets(); 
-
     const cleanupNew = on('help:new_ticket', (newTicket: any) => {
-      setTickets(prev => {
-        if (prev.some(t => t._id === newTicket._id)) return prev;
-        return [newTicket, ...prev];
-      });
+      setTickets(prev => prev.some(t => t._id === newTicket._id) ? prev : [newTicket, ...prev]);
       toast.success('New help ticket received!', { icon: '🙋' });
     });
-
-    return () => {
-      cleanupNew();
-    };
+    return () => { cleanupNew(); };
   }, [on]);
 
   const handleRespond = async (id: string) => {
@@ -66,9 +62,7 @@ export default function TeacherHelpQueuePage() {
     try {
       const { data } = await api.patch(`/api/help-ticket/${id}/respond`, { response });
       toast.success('Response sent!');
-      setTickets((prev) =>
-        prev.map((t) => t._id === id ? data : t)
-      );
+      setTickets((prev) => prev.map((t) => t._id === id ? data : t));
       setResponse('');
       setSelected(null);
     } catch {
@@ -82,15 +76,13 @@ export default function TeacherHelpQueuePage() {
     try {
       const { data } = await api.patch(`/api/help-ticket/${id}/resolve`);
       toast.success('Ticket resolved!');
-      setTickets((prev) =>
-        prev.map((t) => t._id === id ? data : t)
-      );
+      setTickets((prev) => prev.map((t) => t._id === id ? data : t));
     } catch {
       toast.error('Failed to resolve ticket');
     }
   };
 
-  if (loading) return <TableSkeleton rows={4} />;
+  if (loading && tickets.length === 0) return <div className="p-8 text-center handwriting text-2xl">Consulting student queue...</div>;
 
   const filtered = tickets.filter((t) =>
     filter === 'all' ? true : filter === 'pending' ? t.status === 'pending' : t.status === filter
@@ -103,163 +95,174 @@ export default function TeacherHelpQueuePage() {
     resolved: tickets.filter(t => t.status === 'resolved').length,
   };
 
-  const statItems = [
-    { label: 'Total', value: stats.total, color: 'var(--f-text)' },
-    { label: 'Pending', value: stats.pending, color: '#F59E0B' },
-    { label: 'Responded', value: stats.responded, color: '#14B8A6' },
-    { label: 'Resolved', value: stats.resolved, color: '#10B981' },
-  ];
-
   return (
-    <PageTransition>
-      <div className="space-y-6">
-        {}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="font-faculty-heading text-2xl md:text-3xl font-bold text-faculty-text">Help Queue</h1>
-            <p className="font-faculty text-sm text-faculty-text-secondary mt-1">Support students with their academic and technical queries</p>
-          </div>
+    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
+      {}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-4xl font-black text-[#1A1A1A]">Help Queue</h1>
+          <p className="handwriting text-xl text-gray-500 font-medium">Real-time student support & intervention</p>
+        </div>
+        <button
+          onClick={() => fetchTickets(true)}
+          disabled={refreshing}
+          className="px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 flex items-center gap-2 hover:scale-105 transition-all disabled:opacity-50"
+        >
+          <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
+          {refreshing ? 'Syncing...' : 'Sync Queue'}
+        </button>
+      </div>
+
+      {}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {[
+          { label: 'TOTAL', value: stats.total, color: 'blue' as const },
+          { label: 'PENDING', value: stats.pending, color: 'yellow' as const },
+          { label: 'RESPONDED', value: stats.responded, color: 'green' as const },
+          { label: 'RESOLVED', value: stats.resolved, color: 'purple' as const },
+        ].map((stat, i) => (
+          <StickyNote key={stat.label} color={stat.color} rotation={i % 2 === 0 ? -1 : 1}>
+             <span className="text-[10px] font-black tracking-widest text-gray-600 uppercase">{stat.label}</span>
+             <span className="text-4xl font-black text-[#1A1A1A] mt-auto">{stat.value}</span>
+          </StickyNote>
+        ))}
+      </div>
+
+      {}
+      <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl w-fit">
+        {(['all', 'pending', 'responded', 'resolved'] as const).map((f) => (
           <button
-            onClick={() => fetchTickets(true)}
-            className="faculty-btn flex items-center justify-center gap-2 w-full sm:w-auto"
-            disabled={refreshing}
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              filter === f ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+            }`}
           >
-            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-            Refresh Queue
+            {f}
           </button>
-        </div>
+        ))}
+      </div>
 
-        {}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {statItems.map(({ label, value, color }, i) => (
-            <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="faculty-card p-4 text-center">
-              <p className="font-faculty-data text-2xl font-semibold" style={{ color }}>{value}</p>
-              <p className="font-faculty text-[10px] uppercase tracking-wider text-faculty-text-secondary mt-1">{label}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {}
-        <div className="flex gap-2 flex-wrap">
-          {(['all', 'pending', 'responded', 'resolved'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
-                filter === f
-                  ? 'bg-gradient-to-r from-[var(--f-ember)] to-[var(--f-ember-light)] text-white'
-                  : 'faculty-card text-faculty-text-secondary hover:text-faculty-text'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {}
-        <div className="space-y-4">
-          {filtered.length === 0 ? (
-            <div className="faculty-card p-12 text-center">
-              <HelpCircle size={48} className="mx-auto mb-4 text-faculty-text-secondary/30" />
-              <p className="font-faculty-heading text-lg text-faculty-text-secondary">Queue is empty</p>
-            </div>
-          ) : filtered.map((t, i) => {
-            const isSelected = selected === t._id;
-            const urgencyColor = t.urgency === 'high' ? '#EF4444' : t.urgency === 'medium' ? '#F59E0B' : '#14B8A6';
+      {}
+      <div className="space-y-6">
+        {filtered.length === 0 ? (
+          <PaperSheet className="text-center py-20">
+             <HelpCircle size={64} className="mx-auto text-gray-200 mb-4" />
+             <h2 className="text-2xl font-bold text-gray-800">Clear Desk Policy!</h2>
+             <p className="text-gray-500">No student queries in this category currently.</p>
+          </PaperSheet>
+        ) : (
+          filtered.map((t, i) => {
+            const urgencyColor = t.urgency === 'high' ? 'text-red-500' : t.urgency === 'medium' ? 'text-orange-500' : 'text-green-500';
             
             return (
               <motion.div
                 key={t._id}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                className="faculty-card overflow-hidden"
-                style={{ borderLeftWidth: '3px', borderLeftColor: urgencyColor }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
               >
-                <div className="p-4 md:p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="flex gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-faculty-bg/80 border border-faculty-border/50 flex items-center justify-center shrink-0">
-                        {t.studentId?.avatar ? <img src={t.studentId.avatar} className="w-full h-full object-cover rounded-lg" /> : <Users size={18} className="text-faculty-text-secondary" />}
+                <PaperSheet className="relative overflow-hidden group hover:border-purple-200 transition-all">
+                   <div className="flex flex-col md:flex-row gap-6">
+                      {}
+                      <div className="flex-1 space-y-4">
+                         <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-600 font-bold shadow-sm">
+                                  {t.studentId?.name.charAt(0)}
+                               </div>
+                               <div>
+                                  <h3 className="text-lg font-bold text-gray-800">{t.studentId?.name}</h3>
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: {t.studentId?.studentId}</p>
+                               </div>
+                            </div>
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current ${urgencyColor} bg-opacity-5`}>
+                               {t.urgency || 'MEDIUM'} URGENCY
+                            </div>
+                         </div>
+                         
+                         <div className="bg-[#FFFDF6] p-6 rounded-2xl border border-orange-100 relative">
+                            <div className="absolute left-4 top-0 bottom-0 w-px bg-red-100" />
+                            <p className="handwriting text-xl text-gray-700 pl-4">"{t.message}"</p>
+                         </div>
+
+                         {t.response && (
+                           <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                              <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">YOUR RESPONSE</p>
+                              <p className="text-sm font-bold text-purple-800">{t.response}</p>
+                           </div>
+                         )}
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-faculty-heading text-sm font-semibold text-faculty-text">{t.studentId?.name}</h3>
-                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                          <span className="font-faculty-data text-[10px] text-faculty-text-secondary">{t.studentId?.studentId}</span>
-                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ color: urgencyColor, background: urgencyColor + '15' }}>{t.urgency} urgency</span>
-                          <span className="font-faculty text-[10px] px-1.5 py-0.5 rounded bg-faculty-bg/60 text-faculty-text-secondary uppercase">{t.category || 'Academic'}</span>
-                        </div>
+
+                      {}
+                      <div className="md:w-64 shrink-0 flex flex-col gap-3 justify-center">
+                         <div className="text-right mb-auto">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">RECEIVED</p>
+                            <p className="text-xs font-bold text-gray-600">{new Date(t.createdAt).toLocaleString()}</p>
+                         </div>
+                         
+                         <div className="space-y-2">
+                            {t.status !== 'resolved' && (
+                              <button 
+                                onClick={() => setSelected(selected === t._id ? null : t._id)}
+                                className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-100 flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
+                              >
+                                 <MessageSquare size={16} /> {t.response ? 'Update' : 'Respond'}
+                              </button>
+                            )}
+                            {t.status === 'responded' && (
+                              <button 
+                                onClick={() => handleResolve(t._id)}
+                                className="w-full py-3 bg-green-500 text-white rounded-xl font-bold shadow-lg shadow-green-100 flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
+                              >
+                                 <CheckCircle2 size={16} /> Resolve
+                              </button>
+                            )}
+                            {t.status === 'resolved' && (
+                               <div className="w-full py-3 bg-gray-50 text-gray-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-100">
+                                  <CheckCircle2 size={16} /> RESOLVED
+                               </div>
+                            )}
+                         </div>
                       </div>
-                    </div>
-                    <div className="flex sm:flex-col items-center sm:items-end gap-2">
-                      <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full inline-flex items-center gap-1 ${t.status === 'resolved' ? 'bg-emerald-500/10 text-emerald-400' : t.status === 'responded' ? 'bg-blue-500/10 text-blue-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-                        {t.status === 'resolved' ? <CheckCircle2 size={10} /> : <Clock size={10} />}
-                        {t.status}
-                      </span>
-                      <p className="font-faculty-data text-[10px] text-faculty-text-secondary">{new Date(t.createdAt).toLocaleString()}</p>
-                    </div>
-                  </div>
+                   </div>
 
-                  <div className="mt-4 p-3 rounded-lg bg-faculty-bg/40 border border-faculty-border/30 text-sm text-faculty-text-secondary leading-relaxed font-faculty">
-                    &ldquo;{t.message}&rdquo;
-                  </div>
-
-                  {t.response && (
-                    <div className="mt-3 pl-3 border-l-2 border-faculty-border/40 space-y-1">
-                      <p className="font-faculty text-[10px] text-faculty-text-secondary uppercase tracking-wider">Your Response:</p>
-                      <p className="font-faculty text-sm text-faculty-text-secondary">{t.response}</p>
-                    </div>
-                  )}
-
-                  <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                    {t.status !== 'resolved' && (
-                      <button
-                        onClick={() => setSelected(isSelected ? null : t._id)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all ${isSelected ? 'faculty-card text-faculty-text' : 'faculty-btn'}`}
-                      >
-                        <MessageSquare size={14} /> {isSelected ? 'Cancel' : t.response ? 'Update Response' : 'Reply Now'}
-                      </button>
-                    )}
-                    {t.status === 'responded' && (
-                      <button
-                        onClick={() => handleResolve(t._id)}
-                        className="px-6 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm font-semibold hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2"
-                      >
-                        <CheckCircle2 size={14} /> Resolve
-                      </button>
-                    )}
-                  </div>
-
-                  <AnimatePresence>
-                    {isSelected && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="pt-4 space-y-3">
-                          <textarea
-                            value={response}
-                            onChange={(e) => setResponse(e.target.value)}
-                            placeholder="Type your response here..."
-                            rows={3}
-                            className="faculty-input w-full resize-none"
-                          />
-                          <button
-                            onClick={() => handleRespond(t._id)}
-                            disabled={sending || !response.trim()}
-                            className="faculty-btn w-full py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
-                          >
-                            {sending ? 'Sending...' : <><Send size={14} /> Submit Response</>}
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                   {}
+                   <AnimatePresence>
+                      {selected === t._id && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                           <div className="mt-6 pt-6 border-t border-dashed border-gray-200">
+                              <textarea 
+                                value={response}
+                                onChange={e => setResponse(e.target.value)}
+                                placeholder="Type your response to the student..."
+                                className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 p-4 focus:border-b-purple-500 outline-none handwriting text-xl h-32 resize-none transition-all"
+                              />
+                              <div className="flex gap-3 mt-4">
+                                 <button onClick={() => setSelected(null)} className="flex-1 py-3 bg-white text-gray-500 font-bold border border-gray-100 rounded-xl">Cancel</button>
+                                 <button 
+                                   onClick={() => handleRespond(t._id)}
+                                   disabled={sending}
+                                   className="flex-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-200 disabled:opacity-50"
+                                 >
+                                    {sending ? 'Sending...' : 'Send Response'}
+                                 </button>
+                              </div>
+                           </div>
+                        </motion.div>
+                      )}
+                   </AnimatePresence>
+                </PaperSheet>
               </motion.div>
             );
-          })}
-        </div>
+          })
+        )}
       </div>
-    </PageTransition>
+    </div>
   );
 }
