@@ -192,11 +192,11 @@ export default function StudentsPage() {
               <div className="flex items-center justify-between text-sm mb-2">
                 <div>
                   <span className="font-ui text-[var(--text-muted)]">CGPA:</span>
-                  <span className="font-mono font-bold ml-1">{student.cgpa.toFixed(1)}</span>
+                  <span className="font-mono font-bold ml-1">{(student.cgpa || 0).toFixed(1)}</span>
                 </div>
                 <div>
                   <span className="font-ui text-[var(--text-muted)]">Att:</span>
-                  <span className="font-ui font-bold ml-1">{student.attendance}%</span>
+                  <span className="font-ui font-bold ml-1">{student.attendance || 0}%</span>
                 </div>
               </div>
 

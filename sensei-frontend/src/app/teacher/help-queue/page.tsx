@@ -34,8 +34,15 @@ export default function HelpQueuePage() {
   const { on } = useSocket('/teacher');
 
   useEffect(() => {
-    api.get('/api/teacher/help-queue')
-      .then(r => setTickets(r.data.tickets || r.data || []))
+    api.get('/api/help-ticket')
+      .then(r => {
+        const formatted = (r.data.tickets || r.data || []).map((t: any) => ({
+          ...t,
+          student: t.studentId || t.student,
+          status: t.status === 'responded' ? 'in_progress' : t.status,
+        }));
+        setTickets(formatted);
+      })
       .catch(() => setTickets(mockTickets))
       .finally(() => setLoading(false));
 
@@ -52,7 +59,7 @@ export default function HelpQueuePage() {
   const respond = async (id: string) => {
     if (!replyText.trim()) return;
     try {
-      await api.post(`/api/teacher/help-queue/${id}/respond`, { response: replyText });
+      await api.patch(`/api/help-ticket/${id}/respond`, { response: replyText });
       setTickets(prev => prev.map(t => t._id === id ? { ...t, status: 'in_progress' as const } : t));
       toast.success('Reply sent!');
       setReplying(null);

@@ -28,7 +28,8 @@ export default function PollsPage() {
   const create = async () => {
     if (!form.question || !form.options.trim()) { toast.error('Fill all fields'); return; }
     try {
-      await api.post('/api/teacher/polls', { ...form, options: form.options.split(',').map(s => s.trim()).filter(Boolean) });
+      const payloadClassId = form.classId && form.classId.length === 24 ? form.classId : undefined;
+      await api.post('/api/teacher/polls', { ...form, classId: payloadClassId, options: form.options.split(',').map(s => s.trim()).filter(Boolean) });
       toast.success('Poll launched!');
       setShowCreate(false);
       setForm({ question: '', classId: '', options: 'Option A, Option B, Option C', expiry: '' });
