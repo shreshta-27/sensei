@@ -130,6 +130,7 @@ export default function AdminDashboard() {
           trend="6.2%"
           trendUp={true}
           delay={0}
+          href="/admin/users"
         />
         <AdminStatCard
           label="Faculty Members"
@@ -140,6 +141,7 @@ export default function AdminDashboard() {
           trend="3.4%"
           trendUp={true}
           delay={80}
+          href="/admin/faculty"
         />
         <AdminStatCard
           label="Active Courses"
@@ -150,6 +152,7 @@ export default function AdminDashboard() {
           trend="7.1%"
           trendUp={true}
           delay={160}
+          href="/admin/curriculum"
         />
         <AdminStatCard
           label="System Health"
@@ -160,6 +163,7 @@ export default function AdminDashboard() {
           trendLabel="All systems operational"
           delay={240}
           isPercentage={true}
+          href="/admin/system"
         />
       </div>
 

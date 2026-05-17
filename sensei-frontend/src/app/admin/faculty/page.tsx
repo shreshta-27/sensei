@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Star, TrendingUp, Trophy } from 'lucide-react';
+import { Star, TrendingUp, Trophy, ArrowLeft, ArrowRight } from 'lucide-react';
 import api from '@/lib/axios';
 
 const RANK_COLORS = ['#F59E0B', '#9CA3AF', '#CD7C2A'];
 const RANK_LABELS = ['🥇', '🥈', '🥉'];
 
 export default function AdminFacultyPage() {
+  const router = useRouter();
   const [faculty, setFaculty] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,13 +30,21 @@ export default function AdminFacultyPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <button
+          onClick={() => router.push('/admin')}
+          className="adm-back-btn mb-4"
+        >
+          <ArrowLeft size={15} />
+          <span>Back to Dashboard</span>
+        </button>
+
         <div className="flex items-center gap-2 mb-1">
           <Trophy size={24} style={{ color: '#F59E0B' }} />
           <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>
             Faculty Effectiveness
           </h1>
         </div>
-        <p className="text-sm" style={{ color: 'var(--adm-text-muted)' }}>AI-driven teacher performance rankings</p>
+        <p className="text-sm" style={{ color: 'var(--adm-text-muted)' }}>AI-driven teacher performance rankings • Click on faculty to view profile</p>
       </motion.div>
 
       {faculty.length === 0 ? (
@@ -50,8 +60,13 @@ export default function AdminFacultyPage() {
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.07 }}
-              className="adm-card p-5 flex items-center gap-4"
+              className="adm-card p-5 flex items-center gap-4 cursor-pointer group"
               whileHover={{ y: -2 }}
+              onClick={() => {
+                // Navigate using faculty ID if available, else use index
+                const id = f._id || f.teacherId || `faculty-${i}`;
+                router.push(`/admin/faculty/${id}`);
+              }}
             >
               {/* Rank */}
               <div
@@ -74,7 +89,7 @@ export default function AdminFacultyPage() {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-sm" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>{f.name}</h3>
+                <h3 className="font-bold text-sm group-hover:text-purple-700 transition-colors" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>{f.name}</h3>
                 <p className="text-xs" style={{ color: 'var(--adm-text-muted)' }}>{f.dept}</p>
               </div>
 
@@ -94,6 +109,11 @@ export default function AdminFacultyPage() {
                   </div>
                   <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--adm-text-muted)' }}>Pass Rate</p>
                 </div>
+              </div>
+
+              {/* Arrow indicator */}
+              <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 -translate-x-1 group-hover:translate-x-0 flex-shrink-0">
+                <ArrowRight size={16} style={{ color: 'var(--adm-accent)' }} />
               </div>
             </motion.div>
           ))}

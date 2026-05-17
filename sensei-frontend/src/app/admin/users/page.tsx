@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, Search, Users, X, ArrowRight, Download } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { UserPlus, Search, Users, X, ArrowRight, ArrowLeft, Download } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import api from '@/lib/axios';
 
@@ -20,6 +20,7 @@ const ROLE_META: Record<string, { emoji: string; color: string; bg: string }> = 
 };
 
 function UsersContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [users, setUsers]         = useState<UserItem[]>([]);
   const [total, setTotal]         = useState(0);
@@ -98,6 +99,15 @@ function UsersContent() {
   return (
     <div className="space-y-5">
       {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <button
+          onClick={() => router.push('/admin')}
+          className="adm-back-btn mb-4"
+        >
+          <ArrowLeft size={15} />
+          <span>Back to Dashboard</span>
+        </button>
+      </motion.div>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">

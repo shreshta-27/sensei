@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   LayoutDashboard, GraduationCap, BarChart3, Users,
   Brain, AlertTriangle, FileText, Zap, BookOpen,
-  Database, Settings, LogOut, X, Menu, ChevronRight,
+  Database, Settings, LogOut, X, Menu, ChevronLeft, User,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
@@ -40,7 +40,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router   = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
-  const [expanded, setExpanded]   = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => { if (!user || user.role !== 'admin') router.push('/login'); }, [user, router]);
@@ -58,32 +57,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   // ─────────────────────────────────────────────────────
-  //  Sidebar width constants
+  //  Sidebar width constant (icon rail only)
   // ─────────────────────────────────────────────────────
-  const NARROW_W  = 64;
-  const EXPANDED_W = 232;
+  const RAIL_W = 64;
 
   return (
     <div className="adm-page min-h-screen">
 
       {/* ══════════════════════════════════════════════
-          DESKTOP  –  Collapsible Icon Rail (different!)
-          Starts narrow (icons only). Expands on hover.
-          Overlays content – non-disruptive.
+          DESKTOP  –  RIGHT-SIDE Floating Icon Rail
+          Pure icon rail with CSS tooltips on hover.
          ══════════════════════════════════════════════ */}
       <aside
-        onMouseEnter={() => setExpanded(true)}
-        onMouseLeave={() => setExpanded(false)}
-        className="hidden lg:flex fixed left-3 top-3 bottom-3 z-50 flex-col overflow-hidden adm-glass-panel"
+        className="hidden lg:flex fixed right-3 top-3 bottom-3 z-50 flex-col overflow-hidden adm-glass-panel"
         style={{
-          width: expanded ? `${EXPANDED_W}px` : `${NARROW_W}px`,
+          width: `${RAIL_W}px`,
           borderRadius: '22px',
-          transition: 'width 280ms cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        {/* ── Brand ── */}
+        {/* ── Brand Logo ── */}
         <div
-          className="flex items-center gap-3 px-3 pt-5 pb-4 flex-shrink-0 overflow-hidden"
+          className="flex items-center justify-center pt-4 pb-3 flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
         >
           <div
@@ -92,43 +86,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             S
           </div>
-          <div
-            className="overflow-hidden whitespace-nowrap flex-shrink-0"
-            style={{
-              opacity: expanded ? 1 : 0,
-              transform: expanded ? 'translateX(0)' : 'translateX(-8px)',
-              transition: 'opacity 200ms ease, transform 200ms ease',
-              transitionDelay: expanded ? '80ms' : '0ms',
-            }}
-          >
-            <p className="font-bold text-sm leading-tight" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>SENSEI</p>
-            <p className="text-[9px] tracking-widest uppercase" style={{ color: 'var(--adm-text-muted)' }}>AI Campus OS</p>
-          </div>
         </div>
 
-        {/* ── User ── */}
+        {/* ── User Profile ── */}
         <div
-          className="flex items-center gap-3 px-3 py-3 flex-shrink-0 overflow-hidden"
+          className="flex items-center justify-center py-3 flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
         >
-          <div
-            className="w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm text-sm"
-            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #C084FC 100%)' }}
-          >
-            {user.name?.charAt(0).toUpperCase()}
-          </div>
-          <div
-            className="overflow-hidden whitespace-nowrap flex-shrink-0"
-            style={{
-              opacity: expanded ? 1 : 0,
-              transform: expanded ? 'translateX(0)' : 'translateX(-8px)',
-              transition: 'opacity 200ms ease, transform 200ms ease',
-              transitionDelay: expanded ? '80ms' : '0ms',
-            }}
-          >
-            <p className="text-xs font-semibold truncate max-w-[140px]" style={{ color: 'var(--adm-text)', fontFamily: 'Inter, sans-serif' }}>{user.name}</p>
-            <p className="text-[10px]" style={{ color: 'var(--adm-text-muted)' }}>Administrator ⭐</p>
-          </div>
+          <Link href="/admin/settings" className="adm-nav-tooltip-wrap">
+            <div
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm text-sm transition-all duration-200 hover:ring-2 hover:ring-purple-400 hover:ring-offset-2 ${pathname === '/admin/settings' ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
+              style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #C084FC 100%)' }}
+            >
+              {user.name?.charAt(0).toUpperCase()}
+            </div>
+            <span className="adm-nav-tooltip">{user.name || 'Profile'}</span>
+          </Link>
         </div>
 
         {/* ── Nav ── */}
@@ -139,9 +112,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={n.href}
                 href={n.href}
-                className="flex items-center gap-3 rounded-xl overflow-hidden group relative"
+                className="adm-nav-tooltip-wrap flex items-center justify-center rounded-xl relative"
                 style={{
-                  padding: '9px 10px',
+                  padding: '9px 0',
                   background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
                   transition: 'background 150ms ease',
                 }}
@@ -155,13 +128,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {/* Active indicator */}
                 {active && (
                   <div
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-l-full"
                     style={{ background: 'var(--adm-accent)' }}
                   />
                 )}
                 {/* Icon */}
                 <div
-                  className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center"
                   style={{ background: active ? 'rgba(124,58,237,0.15)' : 'transparent' }}
                 >
                   <n.icon
@@ -169,19 +142,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     style={{ color: active ? 'var(--adm-accent)' : 'var(--adm-text-muted)' }}
                   />
                 </div>
-                {/* Label */}
-                <span
-                  className="text-xs font-medium whitespace-nowrap flex-shrink-0 select-none"
-                  style={{
-                    color: active ? 'var(--adm-accent)' : 'var(--adm-text-sub)',
-                    opacity: expanded ? 1 : 0,
-                    transform: expanded ? 'translateX(0)' : 'translateX(-6px)',
-                    transition: 'opacity 200ms ease, transform 200ms ease',
-                    transitionDelay: expanded ? '90ms' : '0ms',
-                  }}
-                >
-                  {n.label}
-                </span>
+                {/* Tooltip (CSS-only, left side) */}
+                <span className="adm-nav-tooltip">{n.label}</span>
               </Link>
             );
           })}
@@ -194,26 +156,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 rounded-xl w-full overflow-hidden group"
-            style={{ padding: '9px 10px', transition: 'background 150ms ease' }}
+            className="adm-nav-tooltip-wrap flex items-center justify-center rounded-xl w-full group"
+            style={{ padding: '9px 0', transition: 'background 150ms ease' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
           >
-            <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center">
               <LogOut size={17} style={{ color: '#EF4444' }} />
             </div>
-            <span
-              className="text-xs font-medium whitespace-nowrap flex-shrink-0"
-              style={{
-                color: '#EF4444',
-                opacity: expanded ? 1 : 0,
-                transform: expanded ? 'translateX(0)' : 'translateX(-6px)',
-                transition: 'opacity 200ms ease, transform 200ms ease',
-                transitionDelay: expanded ? '90ms' : '0ms',
-              }}
-            >
-              Sign Out
-            </span>
+            <span className="adm-nav-tooltip adm-nav-tooltip-danger">Sign Out</span>
           </button>
         </div>
       </aside>
@@ -223,13 +174,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
          ══════════════════════════════════════════════ */}
       <main
         className="min-h-screen flex flex-col"
-        style={{ paddingLeft: 0 }}
+        style={{ paddingRight: 0 }}
       >
-        {/* Desktop left offset — matches narrow sidebar */}
-        <div className="hidden lg:block" style={{ paddingLeft: `${NARROW_W + 20}px` }}>
-          {/* spacer handled via ml on content wrapper below */}
-        </div>
-
         {/* Mobile top bar */}
         <header
           className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3"
@@ -249,21 +195,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <span className="font-bold text-sm" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>SENSEI Admin</span>
           </div>
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--adm-accent)' }}
-          >
-            <Menu size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/settings"
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow"
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #C084FC)' }}
+            >
+              {user.name?.charAt(0).toUpperCase()}
+            </Link>
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--adm-accent)' }}
+            >
+              <Menu size={20} />
+            </button>
+          </div>
         </header>
 
         {/* Page content */}
         <div
           className="flex-1 p-4 md:p-6 lg:p-7 adm-pb-mobile"
-          style={{ marginLeft: 0 }}
+          style={{ marginRight: 0 }}
         >
-          <div className="lg:ml-[84px]">
+          <div className="lg:mr-[84px]">
             {children}
           </div>
         </div>
@@ -316,7 +271,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </nav>
 
       {/* ══════════════════════════════════════════════
-          MOBILE – Full Drawer
+          MOBILE – Full Drawer (slides from RIGHT)
          ══════════════════════════════════════════════ */}
       <AnimatePresence>
         {drawerOpen && (
@@ -328,18 +283,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               onClick={() => setDrawerOpen(false)}
             />
             <motion.aside
-              initial={{ x: '-100%' }}
+              initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
+              exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 left-0 z-50 flex flex-col lg:hidden adm-glass-panel"
-              style={{ width: '264px', borderRadius: '0 20px 20px 0', borderLeft: 'none' }}
+              className="fixed inset-y-0 right-0 z-50 flex flex-col lg:hidden adm-glass-panel"
+              style={{ width: '264px', borderRadius: '20px 0 0 20px', borderRight: 'none' }}
             >
               {/* Header */}
               <div
                 className="flex items-center justify-between px-5 py-4 flex-shrink-0"
                 style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
               >
+                <button onClick={() => setDrawerOpen(false)} style={{ color: 'var(--adm-text-muted)' }}>
+                  <X size={20} />
+                </button>
                 <div className="flex items-center gap-2">
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow"
@@ -349,14 +307,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </div>
                   <span className="font-bold text-sm" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>SENSEI Admin</span>
                 </div>
-                <button onClick={() => setDrawerOpen(false)} style={{ color: 'var(--adm-text-muted)' }}>
-                  <X size={20} />
-                </button>
               </div>
 
               {/* User */}
               <div className="px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}>
-                <div className="flex items-center gap-3 p-2.5 rounded-xl" style={{ background: 'rgba(124,58,237,0.06)' }}>
+                <Link
+                  href="/admin/settings"
+                  className="flex items-center gap-3 p-2.5 rounded-xl transition-all hover:scale-[1.02]"
+                  style={{ background: 'rgba(124,58,237,0.06)' }}
+                  onClick={() => setDrawerOpen(false)}
+                >
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow"
                     style={{ background: 'linear-gradient(135deg, #7C3AED, #C084FC)' }}
@@ -365,9 +325,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </div>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>{user.name}</p>
-                    <p className="text-[10px]" style={{ color: 'var(--adm-text-muted)' }}>Super Administrator</p>
+                    <p className="text-[10px]" style={{ color: 'var(--adm-text-muted)' }}>View Profile & Settings</p>
                   </div>
-                </div>
+                </Link>
               </div>
 
               {/* Nav */}
@@ -386,7 +346,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     >
                       <n.icon size={16} style={{ color: active ? 'var(--adm-accent)' : 'var(--adm-text-muted)' }} />
                       {n.label}
-                      {active && <ChevronRight size={13} className="ml-auto" style={{ color: 'var(--adm-accent)' }} />}
+                      {active && <ChevronLeft size={13} className="ml-auto" style={{ color: 'var(--adm-accent)' }} />}
                     </Link>
                   );
                 })}
