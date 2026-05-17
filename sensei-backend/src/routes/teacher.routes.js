@@ -14,6 +14,7 @@ router.get('/classes', ctrl.getClasses);
 router.post('/classes', ctrl.createClass);
 router.get('/classes/:classId', ctrl.getClassDetail);
 router.get('/students', ctrl.getStudents);
+router.post('/students', ctrl.addStudent);
 router.get('/students/:studentId', ctrl.getStudentDetail);
 router.post('/upload', upload.single('csv'), ctrl.uploadCSV);
 router.get('/upload/:uploadId/status', ctrl.getUploadStatus);

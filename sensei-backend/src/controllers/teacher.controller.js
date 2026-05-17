@@ -141,8 +141,80 @@ export const getStudents = async (req, res) => {
   try {
     const classes = await Class.find({ teacherId: req.user.userId });
     const studentIds = classes.flatMap((c) => c.studentIds);
-    const students = await User.find({ _id: { $in: studentIds }, role: 'student' });
+    const users = await User.find({ _id: { $in: studentIds }, role: 'student' }).lean();
+
+    const students = await Promise.all(
+      users.map(async (user) => {
+        const perf = await getStudentPerformance(user._id);
+        const insight = await Insight.findOne({ studentId: user._id }).lean();
+        return {
+          ...user,
+          cgpa: perf.cgpa || 0,
+          attendance: perf.avgAttendance || 0,
+          riskLevel: insight?.riskLevel || perf.risk?.level || 'low',
+          riskReason: insight?.riskReason || (perf.risk?.level !== 'low' ? 'Below expected grades or attendance.' : 'Consistent performance.'),
+        };
+      })
+    );
+
     res.json({ students });
+  } catch (error) {
+    res.status(500).json({ error: error.message, code: 500 });
+  }
+};
+
+export const addStudent = async (req, res) => {
+  try {
+    const { name, email, studentId, department, semester, cgpa, attendance } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and Email are required' });
+    }
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        role: 'student',
+        department: department || 'CSE',
+        studentId: studentId || `ST${Date.now().toString().slice(-6)}`,
+        password: 'Password123!',
+      });
+      await Student.create({ userId: user._id, semester: semester || 1 });
+    }
+
+    const firstClass = await Class.findOne({ teacherId: req.user.userId });
+    if (firstClass) {
+      if (!firstClass.studentIds.includes(user._id)) {
+        firstClass.studentIds.push(user._id);
+        await firstClass.save();
+      }
+    }
+
+    if (cgpa !== undefined) {
+      const percentage = (Number(cgpa) / 10) * 100;
+      await Marks.create({
+        studentId: user._id,
+        subject: 'General Performance',
+        percentage,
+        marksObtained: percentage,
+        totalMarks: 100,
+        examDate: new Date(),
+      });
+    }
+
+    if (attendance !== undefined) {
+      await Attendance.create({
+        studentId: user._id,
+        subject: 'General Performance',
+        percentage: Number(attendance),
+        presentDays: Number(attendance),
+        totalDays: 100,
+        date: new Date(),
+      });
+    }
+
+    res.status(201).json({ message: 'Student added successfully', student: user });
   } catch (error) {
     res.status(500).json({ error: error.message, code: 500 });
   }
