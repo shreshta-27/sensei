@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, X, Send, Mic, MicOff, Volume2, VolumeX, Loader2, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -20,15 +20,19 @@ export default function AdminAIChatbot() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [playingAudio, setPlayingAudio] = useState(false);
+  const [sttSupported, setSttSupported] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const pendingVoiceSendRef = useRef(false);
+  const isSpeakingRef = useRef(false);
+
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([{ role: 'assistant', content: 'Hello Admin. I am your Executive AI Assistant. How can I help you manage the campus today?', timestamp: new Date().toISOString() }]);
-
     }
   }, [isOpen, messages.length]);
 
@@ -36,55 +40,9 @@ export default function AdminAIChatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => {
-
-    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-
-      recognitionRef.current.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInput(transcript);
-        setIsListening(false);
-      };
-
-      recognitionRef.current.onerror = () => setIsListening(false);
-      recognitionRef.current.onend = () => setIsListening(false);
-    }
-  }, []);
-
-  const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current?.start();
-      setIsListening(true);
-    }
-  };
-
-  const playTTS = async (text: string) => {
-    if (!isSpeaking) return;
-    try {
-      setPlayingAudio(true);
-      const { data } = await api.post('/api/tts/generate', { text }, { responseType: 'blob' });
-      const audioUrl = URL.createObjectURL(data);
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        audioRef.current.play();
-        audioRef.current.onended = () => setPlayingAudio(false);
-      }
-    } catch (err) {
-      console.error('TTS Error:', err);
-      setPlayingAudio(false);
-    }
-  };
-
-  const send = async () => {
-    if (!input.trim() || loading) return;
-    const msg: ChatMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim()) return;
+    const msg: ChatMessage = { role: 'user', content: text, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, msg]);
     setInput('');
     setLoading(true);
@@ -93,16 +51,99 @@ export default function AdminAIChatbot() {
       const { data } = await api.post('/api/chatbot/admin/chat', { message: msg.content });
       const assistantMsg: ChatMessage = { role: 'assistant', content: data.reply, timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, assistantMsg]);
-      
-      if (isSpeaking) {
-        await playTTS(data.reply);
+
+      if (isSpeakingRef.current) {
+        playTTS(data.reply);
       }
     } catch (err) {
       console.error(err);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Oops! Something went wrong while connecting to the assistant.', timestamp: new Date().toISOString() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Oops! Something went wrong while connecting to the assistant. Please try again.', timestamp: new Date().toISOString() }]);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        pendingVoiceSendRef.current = true;
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = () => setIsListening(false);
+      recognitionRef.current.onend = () => setIsListening(false);
+    } else {
+      setSttSupported(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (pendingVoiceSendRef.current && input.trim() && !loading) {
+      pendingVoiceSendRef.current = false;
+      sendMessage(input);
+    }
+  }, [input, loading, sendMessage]);
+
+  const toggleListening = () => {
+    if (!sttSupported) return;
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error('STT start error:', e);
+        setIsListening(false);
+      }
+    }
+  };
+
+  const playBrowserTTS = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[#*`_~|>\-\[\]()!]/g, '').replace(/\n+/g, '. ').slice(0, 500);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setPlayingAudio(true);
+    utterance.onend = () => setPlayingAudio(false);
+    utterance.onerror = () => setPlayingAudio(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const playTTS = async (text: string) => {
+    if (!isSpeakingRef.current) return;
+    try {
+      setPlayingAudio(true);
+      const { data } = await api.post('/api/tts/generate', { text: text.slice(0, 500) }, { responseType: 'blob' });
+      const audioUrl = URL.createObjectURL(data);
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.play();
+        audioRef.current.onended = () => {
+          setPlayingAudio(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+      }
+    } catch (err) {
+      console.warn('ElevenLabs TTS failed, using browser TTS fallback');
+      playBrowserTTS(text);
+    }
+  };
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    await sendMessage(input);
   };
 
   return (

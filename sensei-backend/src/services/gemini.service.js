@@ -23,7 +23,7 @@ const queue = new PQueue({
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const callGemini = async (prompt, options = {}) => {
-  const { systemPrompt, jsonMode = false, maxAttempts = 3 } = options;
+  const { systemPrompt, jsonMode = false, maxAttempts = 3, throwOnError = false } = options;
 
   const fullPrompt = jsonMode
     ? `${prompt}\n\nRespond ONLY with valid JSON. No markdown, no backticks, no explanation.`
@@ -69,10 +69,12 @@ export const callGemini = async (prompt, options = {}) => {
       try {
         return await callHuggingFace(fullPrompt, { systemPrompt });
       } catch (hfError) {
+        if (throwOnError) throw hfError;
         console.warn('[AI Fallback] Both Gemini and HuggingFace failed. Using mock text fallback.');
         return getMockTextResponse(prompt);
       }
     }
+    if (throwOnError) throw geminiError;
     console.warn('[AI Fallback] Gemini failed and HF not configured. Using mock text fallback.');
     return getMockTextResponse(prompt);
   }

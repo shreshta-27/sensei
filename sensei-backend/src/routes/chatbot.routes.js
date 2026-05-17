@@ -136,6 +136,95 @@ You are an expert teaching assistant. Help the faculty member analyze student pe
   }
 });
 
+router.post('/admin/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    const userId = req.user.userId;
+
+    let history = await ChatHistory.findOne({ studentId: userId });
+    if (!history) {
+      history = await ChatHistory.create({ studentId: userId, messages: [] });
+    }
+
+    const User = (await import('../models/User.js')).default;
+    const DropoutPrediction = (await import('../models/DropoutPrediction.js')).default;
+    const InterventionModel = (await import('../models/Intervention.js')).default;
+
+    const [totalStudents, totalTeachers, atRiskStudents, activeInterventions, criticalDropouts] = await Promise.all([
+      User.countDocuments({ role: 'student', isActive: true }),
+      User.countDocuments({ role: 'teacher', isActive: true }),
+      Insight.countDocuments({ riskLevel: { $in: ['high', 'critical'] } }),
+      InterventionModel.countDocuments({ status: { $in: ['sent', 'in_progress'] } }),
+      DropoutPrediction.countDocuments({ riskTier: { $in: ['high', 'critical'] } }),
+    ]);
+
+    const campusContext = `
+LIVE CAMPUS DATA:
+- Total Active Students: ${totalStudents}
+- Total Active Faculty: ${totalTeachers}
+- High/Critical Risk Students: ${atRiskStudents}
+- Active Interventions: ${activeInterventions}
+- Critical Dropout Predictions: ${criticalDropouts}`;
+
+    const systemPrompt = `You are Sensei Executive AI Assistant for the Campus Admin.
+Admin: ${req.user.name}. Role: ${req.user.role}.
+${campusContext}
+
+You are a highly capable campus management AI. You can:
+- Provide real-time campus analytics and insights
+- Analyze student risk patterns and suggest interventions
+- Help with faculty workload management
+- Generate reports and strategic recommendations
+- Answer questions about system health and performance
+- Advise on curriculum optimization and resource allocation
+
+Be professional, data-driven, concise, and use markdown formatting. When referencing data, use the live campus stats above. Provide actionable insights and recommendations.`;
+
+    const recentMessages = history.messages.slice(-10).map((m) => `${m.role}: ${m.content}`).join('\n');
+    const fullPrompt = `${recentMessages}\nuser: ${message}`;
+
+    let reply;
+    try {
+      reply = await callGemini(fullPrompt, { systemPrompt, throwOnError: true });
+    } catch (aiError) {
+      console.error('[Chatbot] Admin AI service failed:', aiError.message);
+      const lowerMsg = message.toLowerCase();
+      
+      if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
+        reply = `Hi ${req.user.name || 'Admin'}! I'm here to help you manage the campus. Right now, we have **${totalStudents}** active students and **${totalTeachers}** faculty members. How can I assist you today?`;
+      } 
+      else if (lowerMsg.includes('how many student') || lowerMsg.includes('total student') || lowerMsg.includes('student count')) {
+        reply = `We currently have **${totalStudents}** active students enrolled. Out of these, **${atRiskStudents}** are flagged as high or critical risk, and we have **${activeInterventions}** interventions in progress to help them.`;
+      }
+      else if (lowerMsg.includes('how many teacher') || lowerMsg.includes('how many faculty') || lowerMsg.includes('total teacher')) {
+        reply = `There are **${totalTeachers}** active faculty members on staff. They are doing a great job managing our **${totalStudents}** students!`;
+      }
+      else if (lowerMsg.includes('risk') || lowerMsg.includes('dropout')) {
+        reply = `I've checked the latest data. We have **${atRiskStudents}** students flagged as high or critical risk, and **${criticalDropouts}** students with critical dropout predictions. We are currently running **${activeInterventions}** interventions to support them. You can check the AI Engine dashboard for more details.`;
+      }
+      else if (lowerMsg.includes('report') || lowerMsg.includes('stat') || lowerMsg.includes('analytics')) {
+        reply = `Here is a quick summary of the campus status: We have **${totalStudents}** students and **${totalTeachers}** faculty members. There are **${atRiskStudents}** students at risk and **${activeInterventions}** active interventions. For a more detailed breakdown, you can check the Analytics or Reports pages!`;
+      }
+      else {
+        reply = `I understand you're asking about "${message.substring(0, 30)}${message.length > 30 ? '...' : ''}". I'm having a bit of trouble connecting to my full brain right now, but I can tell you that we have **${totalStudents}** students and **${totalTeachers}** teachers. Is there anything specific you need to know about them?`;
+      }
+    }
+
+    history.messages.push({ role: 'user', content: message, timestamp: new Date() });
+    history.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
+
+    if (history.messages.length > 100) {
+      history.messages = history.messages.slice(-50);
+    }
+    await history.save();
+
+    res.json({ reply, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('[Admin Chatbot Error]', error.message);
+    res.status(500).json({ error: error.message, code: 500 });
+  }
+});
+
 router.get('/history', async (req, res) => {
   try {
     const history = await ChatHistory.findOne({ studentId: req.user.userId });
