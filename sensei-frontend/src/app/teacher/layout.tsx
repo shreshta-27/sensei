@@ -42,10 +42,6 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
   if (!user || (user as any).role !== 'teacher') return null;
 
-  document.body.className = teachingMode
-    ? 'font-ui bg-[var(--bg-page)] text-[var(--text-primary)]'
-    : 'font-ui bg-[var(--f-bg)] text-[var(--f-text)]';
-
   return (
     <div className={teachingMode
       ? 'min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]'

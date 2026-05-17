@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+  baseURL: API_BASE,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' }
 });
@@ -17,35 +19,67 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (v: unknown) => void; reject: (e: unknown) => void }> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
+  });
+  failedQueue = [];
+};
+
+const forceLogout = () => {
+  localStorage.removeItem('accessToken');
+  try { useAuthStore.getState().logout(); } catch (e) { /* store may not be initialized */ }
+  if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+    window.location.href = '/login';
+  }
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
+    if (originalRequest?.url?.includes('/auth/login') || originalRequest?.url?.includes('/auth/refresh')) {
       return Promise.reject(error);
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        }).catch(() => {
+          forceLogout();
+          return Promise.reject(error);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`,
+          `${API_BASE}/api/auth/refresh`,
           {},
           { withCredentials: true }
         );
 
         localStorage.setItem('accessToken', data.accessToken);
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        processQueue(null, data.accessToken);
         return api(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('accessToken');
-        try { useAuthStore.getState().logout(); } catch (e) { console.error('Failed to clear auth state', e); }
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        processQueue(refreshError, null);
+        forceLogout();
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

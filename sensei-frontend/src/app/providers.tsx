@@ -4,9 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { useState, Component, ErrorInfo, ReactNode } from 'react';
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  constructor(props: any) { super(props); this.state = { hasError: false }; }
-  static getDerivedStateFromError() { return { hasError: true }; }
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: any) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
   componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Uncaught error:", error, errorInfo); }
   render() {
     if (this.state.hasError) {
@@ -14,7 +14,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
         <div className="flex flex-col items-center justify-center min-h-screen bg-[#05080f] text-white p-10 text-center">
           <h1 className="font-cinzel text-4xl mb-4 text-[#FFD700]">OOPS! SYSTEM GLITCH 🤖</h1>
           <p className="font-fredoka text-lg opacity-60 max-w-md mx-auto mb-8">The metaverse encountered a ripple in space-time. Try refreshing!</p>
-          <button onClick={() => window.location.reload()} className="px-8 py-3 bg-[#FFD700] text-black font-bold rounded-xl hard-shadow">REFRESH WORLD</button>
+          <div className="flex gap-4">
+            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-[#FFD700] text-black font-bold rounded-xl hard-shadow">REFRESH WORLD</button>
+            <button onClick={() => { localStorage.removeItem('accessToken'); window.location.href = '/login'; }} className="px-8 py-3 bg-white/10 text-white font-bold rounded-xl border border-white/20 hover:bg-white/20 transition-colors">GO TO LOGIN</button>
+          </div>
         </div>
       );
     }
