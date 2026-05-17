@@ -35,6 +35,16 @@ export default function AIAvatarChatbotPage() {
   const recognitionRef = useRef<any>(null);
 
 
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
+
   useEffect(() => {
     api.get('/api/chatbot/history').then(({ data }) => {
       if (data.messages?.length) setMessages(data.messages);
@@ -79,8 +89,25 @@ export default function AIAvatarChatbotPage() {
 
     try {
       const utterance = new SpeechSynthesisUtterance(text.replace(/[#*_`]/g, ''));
+      
+      const vList = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
+      const femaleVoice = vList.find(v => 
+        v.name.includes('Female') || 
+        v.name.includes('Zira') || 
+        v.name.includes('Samantha') || 
+        v.name.includes('Victoria') ||
+        v.name.includes('Microsoft Hazel') ||
+        v.name.includes('Google UK English Female') ||
+        v.name.includes('Google US English') // fallback to google generic if specific female isn't explicitly named
+      );
+      
+      // If we found a female voice, use it. Otherwise wait for voices to load next time
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+      
       utterance.rate = 1;
-      utterance.pitch = 1;
+      utterance.pitch = 1.3; // Higher pitch for female/anime vibe
       utterance.volume = 1;
       
       setPlayingAudio(true);
