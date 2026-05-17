@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, FileText, Activity, Upload,
   AlertTriangle, BarChart3, HelpCircle, Sparkles, User,
-  LogOut, Settings, Calendar, BookOpen, BrainCircuit
+  LogOut, Settings, Calendar, BookOpen, BrainCircuit, MessageCircle
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -18,6 +18,7 @@ const navItems = [
   { href: '/teacher/students', icon: Users, label: 'Students' },
   { href: '/teacher/ai-insights', icon: BrainCircuit, label: 'AI Insights' },
   { href: '/teacher/interventions', icon: AlertTriangle, label: 'Interventions' },
+  { href: '/teacher/messages', icon: MessageCircle, label: 'Messages' },
   { href: '/teacher/grading', icon: FileText, label: 'Assessments' },
   { href: '/teacher/reports', icon: BarChart3, label: 'Reports' },
   { href: '/teacher/upload', icon: Upload, label: 'Resources' },

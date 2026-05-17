@@ -346,8 +346,7 @@ export default function StudentsPage() {
                   View Profile
                 </ComicButton>
                 <ComicButton variant="secondary" size="sm" icon={<MessageCircle size={14} />} onClick={() => {
-                  toast.success(`Opening message window for ${student.name}...`);
-                  window.location.href = `mailto:${student.email || 'student@sensei.edu'}?subject=Sensei Feedback - Academic Update`;
+                  router.push(`/teacher/messages?studentId=${student._id || student.id}`);
                 }} className="flex-1">
                   Message
                 </ComicButton>

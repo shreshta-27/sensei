@@ -9,7 +9,7 @@ import { BookOpen, Bell, User, ChevronDown, Settings, LogOut, Sparkles, Activity
 
 const NAV_LINKS = [
   'Home', 'My Classes', 'Students', 'AI Insights',
-  'Interventions', 'Assessments', 'Reports', 'Upload', 'Help Queue', 'Polls',
+  'Interventions', 'Messages', 'Assessments', 'Reports', 'Upload', 'Help Queue', 'Polls',
 ];
 
 const NOTIFICATIONS = [
@@ -65,6 +65,7 @@ export default function NewTopNav() {
       Students: '/teacher/students',
       'AI Insights': '/teacher/ai-insights',
       Interventions: '/teacher/interventions',
+      Messages: '/teacher/messages',
       Assessments: '/teacher/ai-content',
       Reports: '/teacher/reports',
       Upload: '/teacher/upload',
@@ -122,6 +123,8 @@ export default function NewTopNav() {
                     ? '/teacher/ai-insights'
                     : link === 'Interventions'
                     ? '/teacher/interventions'
+                    : link === 'Messages'
+                    ? '/teacher/messages'
                     : link === 'Assessments'
                     ? '/teacher/grading'
                     : link === 'Reports'

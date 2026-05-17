@@ -170,6 +170,11 @@ export const addStudent = async (req, res) => {
       return res.status(400).json({ error: 'Name and Email are required' });
     }
 
+    const firstClass = await Class.findOne({ teacherId: req.user.userId });
+    if (!firstClass) {
+      return res.status(400).json({ error: 'Please create a class before adding students.' });
+    }
+
     let user = await User.findOne({ email });
     if (!user) {
       user = await User.create({
@@ -183,34 +188,31 @@ export const addStudent = async (req, res) => {
       await Student.create({ userId: user._id, semester: semester || 1 });
     }
 
-    const firstClass = await Class.findOne({ teacherId: req.user.userId });
-    if (firstClass) {
-      if (!firstClass.studentIds.includes(user._id)) {
-        firstClass.studentIds.push(user._id);
-        await firstClass.save();
-      }
+    if (!firstClass.studentIds.includes(user._id)) {
+      firstClass.studentIds.push(user._id);
+      await firstClass.save();
     }
 
     if (cgpa !== undefined) {
       const percentage = (Number(cgpa) / 10) * 100;
+      const endSem = Math.round((percentage / 100) * 150);
       await Marks.create({
         studentId: user._id,
+        classId: firstClass._id,
         subject: 'General Performance',
-        percentage,
-        marksObtained: percentage,
-        totalMarks: 100,
-        examDate: new Date(),
+        endSem,
+        semester: Number(semester) || 1,
       });
     }
 
     if (attendance !== undefined) {
       await Attendance.create({
         studentId: user._id,
+        classId: firstClass._id,
         subject: 'General Performance',
-        percentage: Number(attendance),
-        presentDays: Number(attendance),
-        totalDays: 100,
-        date: new Date(),
+        attended: Number(attendance),
+        total: 100,
+        semester: Number(semester) || 1,
       });
     }
 
