@@ -209,37 +209,37 @@ function MessagesContent() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto divide-y-2 divide-black p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#FCFAF2]">
           {filteredStudents.map(s => {
             const isActive = selectedStudent?._id === s._id;
             return (
               <button
                 key={s._id}
                 onClick={() => setSelectedStudent(s)}
-                className={`w-full p-3 rounded-xl flex items-center gap-3 transition-all text-left font-ui ${
+                className={`w-full p-3.5 rounded-2xl flex items-center gap-3.5 transition-all text-left font-ui border-2 ${
                   isActive
-                    ? 'bg-[var(--accent-purple)] text-white border-2 border-black shadow-[2px_2px_0_#000]'
-                    : 'hover:bg-[var(--sticky-yellow)]/30 border-2 border-transparent'
+                    ? 'bg-[var(--accent-purple)] text-white border-black shadow-[3px_3px_0_#000] translate-y-[-2px]'
+                    : 'bg-white text-[var(--text-primary)] border-black/10 hover:border-black/35 shadow-[2px_2px_0_rgba(0,0,0,0.03)] hover:shadow-[3px_3px_0_#000] hover:bg-[var(--sticky-yellow)]/10 hover:translate-y-[-1px]'
                 }`}
               >
                 <TeacherAvatar name={s.name} size={38} />
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm truncate">{s.name}</span>
-                    <span className="text-[10px] opacity-75">CGPA {s.cgpa.toFixed(1)}</span>
+                    <span className={`text-[10px] font-semibold ${isActive ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>CGPA {s.cgpa.toFixed(1)}</span>
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className={`text-[10px] uppercase font-bold truncate opacity-85`}>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className={`text-[10px] uppercase font-black tracking-widest ${isActive ? 'text-white/90' : 'text-purple-700/80'}`}>
                       {s.department}
                     </span>
-                    <RiskBadge level={s.riskLevel === 'improving' ? 'low' : s.riskLevel as any} />
+                    <RiskBadge level={s.riskLevel as any} />
                   </div>
                 </div>
               </button>
             );
           })}
           {filteredStudents.length === 0 && (
-            <div className="text-center py-8 font-handwrite text-base text-[var(--text-muted)]">
+            <div className="text-center py-12 font-handwrite text-base text-[var(--text-muted)]">
               No students found
             </div>
           )}
