@@ -43,6 +43,22 @@ import setupWorldSocket from './src/socket/world.socket.js';
 import setupInterviewSocket from './src/socket/interview.socket.js';
 import setupDebateSocket from './src/socket/debate.socket.js';
 
+const transports = [
+  new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    )
+  })
+];
+
+if (process.env.NODE_ENV === 'production') {
+  transports.push(
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'logs/combined.log' })
+  );
+}
+
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: winston.format.combine(
@@ -50,16 +66,7 @@ const logger = winston.createLogger({
     winston.format.errors({ stack: true }),
     winston.format.json()
   ),
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    }),
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
-  ]
+  transports
 });
 
 const app = express();
