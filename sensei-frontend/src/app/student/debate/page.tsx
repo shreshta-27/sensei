@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Swords, Brain, Award, ShieldAlert, ArrowRight, Target, BookOpen, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
+import api from '@/lib/axios';
 import { useAuthStore } from '@/stores/authStore';
 
 const AI_PERSONALITIES = [
@@ -34,7 +34,7 @@ export default function DebateHub() {
   const [sessions, setSessions] = useState<any[]>([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/debate', { withCredentials: true })
+    api.get('/api/debate')
       .then(res => setSessions(res.data.sessions || []))
       .catch(() => {});
   }, []);

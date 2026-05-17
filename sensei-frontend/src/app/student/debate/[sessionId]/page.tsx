@@ -67,7 +67,7 @@ export default function DebateArena() {
 
     nlpWorker.current = new Worker(new URL('../../../../workers/DebateNLPWorker.ts', import.meta.url));
 
-    const newSocket = io('http://localhost:5000/debate');
+    const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/debate`);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {

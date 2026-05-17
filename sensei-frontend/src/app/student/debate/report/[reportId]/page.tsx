@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/axios';
 import { Trophy, Brain, Target, ShieldAlert, Activity, TrendingUp, AlertTriangle, BookOpen } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -13,7 +13,7 @@ export default function DebateReport() {
   const [report, setReport] = useState<any>(null);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/debate/report/${reportId}`, { withCredentials: true })
+    api.get(`/api/debate/report/${reportId}`)
       .then(res => setReport(res.data.report))
       .catch(console.error);
   }, [reportId]);
