@@ -205,6 +205,9 @@ Be professional, data-driven, concise, and use markdown formatting. When referen
       else if (lowerMsg.includes('report') || lowerMsg.includes('stat') || lowerMsg.includes('analytics')) {
         reply = `Here is a quick summary of the campus status: We have **${totalStudents}** students and **${totalTeachers}** faculty members. There are **${atRiskStudents}** students at risk and **${activeInterventions}** active interventions. For a more detailed breakdown, you can check the Analytics or Reports pages!`;
       }
+      else if (lowerMsg.includes('improve') || lowerMsg.includes('how to help') || lowerMsg.includes('what can we do')) {
+        reply = `To improve student success, we should focus on the **${atRiskStudents}** students flagged as high risk. I recommend completing the **${activeInterventions}** active interventions and reaching out to the **${criticalDropouts}** students with critical dropout predictions. Adding more personalized support or tutoring for these groups usually helps a lot!`;
+      }
       else {
         reply = `I understand you're asking about "${message.substring(0, 30)}${message.length > 30 ? '...' : ''}". I'm having a bit of trouble connecting to my full brain right now, but I can tell you that we have **${totalStudents}** students and **${totalTeachers}** teachers. Is there anything specific you need to know about them?`;
       }

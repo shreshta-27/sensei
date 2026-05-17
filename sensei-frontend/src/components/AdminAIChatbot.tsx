@@ -223,6 +223,19 @@ export default function AdminAIChatbot() {
 
             {}
             <div className="p-4 border-t" style={{ background: 'var(--adm-surface)', borderColor: 'rgba(124,58,237,0.1)' }}>
+              {messages.length <= 1 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button onClick={() => sendMessage("How many students do we have?")} className="text-xs px-3 py-1.5 rounded-full border hover:bg-slate-800 transition-colors" style={{ color: 'var(--adm-text)', borderColor: 'rgba(124,58,237,0.2)', background: 'rgba(124,58,237,0.05)' }}>
+                    📊 Total Students
+                  </button>
+                  <button onClick={() => sendMessage("Are there students at risk?")} className="text-xs px-3 py-1.5 rounded-full border hover:bg-slate-800 transition-colors" style={{ color: 'var(--adm-text)', borderColor: 'rgba(124,58,237,0.2)', background: 'rgba(124,58,237,0.05)' }}>
+                    ⚠️ Students at Risk
+                  </button>
+                  <button onClick={() => sendMessage("How can we improve?")} className="text-xs px-3 py-1.5 rounded-full border hover:bg-slate-800 transition-colors" style={{ color: 'var(--adm-text)', borderColor: 'rgba(124,58,237,0.2)', background: 'rgba(124,58,237,0.05)' }}>
+                    🎯 How to Improve?
+                  </button>
+                </div>
+              )}
               {playingAudio && <p className="text-xs font-semibold mb-2 animate-pulse flex items-center gap-2" style={{ color: 'var(--adm-accent)' }}><Volume2 size={12}/> Assistant is speaking...</p>}
               <div className="flex items-center gap-2">
                 <button 
