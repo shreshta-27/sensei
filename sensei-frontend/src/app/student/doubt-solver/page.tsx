@@ -338,7 +338,11 @@ export default function DoubtSolverPage() {
             type="file" 
             ref={fileInputRef} 
             className="hidden" 
-            accept="image}
+            accept="image/*"
+            onChange={handleFileUpload}
+          />
+        </div>
+
         <AnimatePresence>
           {isRecording && (
             <motion.div

@@ -36,14 +36,43 @@ Be encouraging, give specific academic advice, use markdown formatting.`;
       console.error('[Chatbot] AI service failed:', aiError.message);
 
       const lowerMsg = message.toLowerCase();
+      
+      // Dynamic Offline Rule-Based Engine
       if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
-        reply = `Hey ${req.user.name || 'there'}! 👋 I'm Sensei, your AI study mentor. I'm having a small connectivity hiccup right now, but I'm still here for you! Try asking me again in a moment.`;
-      } else if (lowerMsg.includes('help') || lowerMsg.includes('study') || lowerMsg.includes('exam')) {
-        reply = `Great question about studying! 📚 Here are some quick tips while my AI brain reconnects:\n\n1. **Active Recall** — Test yourself instead of re-reading notes\n2. **Spaced Repetition** — Review material at increasing intervals\n3. **Pomodoro Technique** — Study for 25 min, break for 5 min\n4. **Teach Someone** — Explaining concepts helps you retain them\n\nTry asking me again in a moment for a more personalized answer! 💪`;
-      } else if (lowerMsg.includes('how are you') || lowerMsg.includes('how r u')) {
-        reply = `I'm doing well, thanks for asking! 😊 My AI services are briefly pausing, but I'll be back to full power shortly. In the meantime, feel free to explore the Study Plan or Quiz features!`;
-      } else {
-        reply = `Thanks for your message, ${req.user.name || 'friend'}! 🤖 I'm experiencing a brief AI service interruption. Here's what you can do:\n\n- 📝 Try the **AI Quiz** for practice questions\n- 📖 Generate a **Study Plan** for structured learning\n- 🎯 Check out **Focus Guardian** for better concentration\n\nPlease try your question again in a few moments — I'll be back at full power soon! ⚡`;
+        const greetings = [
+          `Hey ${req.user.name || 'there'}! 👋 I'm Sensei. What subject are we diving into today?`,
+          `Hello! 😊 Ready to ace some exams? What's on your mind?`,
+          `Hi ${req.user.name || ''}! ✨ I'm here to help. Should we start a quiz or review your study plan?`
+        ];
+        reply = greetings[Math.floor(Math.random() * greetings.length)];
+      } 
+      else if (lowerMsg.includes('math') || lowerMsg.includes('calculus') || lowerMsg.includes('algebra')) {
+        reply = `Math is all about practice! 🧮 For ${message}, I recommend focusing on solving step-by-step rather than memorizing formulas. Want me to generate a practice quiz for this?`;
+      }
+      else if (lowerMsg.includes('science') || lowerMsg.includes('physics') || lowerMsg.includes('chemistry') || lowerMsg.includes('biology')) {
+        reply = `Science requires understanding the core concepts deeply. 🔬 For topics like ${message}, try teaching it to someone else (or to me!) to see if you truly grasp it.`;
+      }
+      else if (lowerMsg.includes('code') || lowerMsg.includes('programming') || lowerMsg.includes('javascript') || lowerMsg.includes('python')) {
+        reply = `Programming is best learned by doing! 💻 Instead of just reading about ${message}, try building a small project. Let me know if you need debugging help!`;
+      }
+      else if (lowerMsg.includes('help') || lowerMsg.includes('study') || lowerMsg.includes('exam')) {
+        reply = `Don't panic about your exams! 📚 Here is my top advice:\n\n1. **Active Recall** — Test yourself instead of re-reading.\n2. **Spaced Repetition** — Review material at increasing intervals.\n3. **Pomodoro Technique** — Study for 25 min, break for 5 min.\n\nYou've got this! 💪`;
+      } 
+      else if (lowerMsg.includes('how are you') || lowerMsg.includes('how r u')) {
+        reply = `I'm doing fantastic, thanks for asking! 😊 My circuits are fully charged and I'm ready to help you learn. What's our goal for today?`;
+      } 
+      else if (lowerMsg.includes('thanks') || lowerMsg.includes('thank you')) {
+        reply = `You're very welcome! ✨ I'm always here if you need more help. Keep up the great work!`;
+      }
+      else if (lowerMsg.includes('joke') || lowerMsg.includes('funny')) {
+        reply = `Here's a study joke for you: Why did the student eat his homework? 🤔 ...Because the teacher told him it was a piece of cake! 🍰`;
+      }
+      else if (lowerMsg.length < 10) {
+        reply = `Could you elaborate a bit more on "${message}"? I want to make sure I give you the best possible answer! 🤔`;
+      }
+      else {
+        // Generic contextual response
+        reply = `That's a very interesting point about "${message.substring(0, 30)}${message.length > 30 ? '...' : ''}"! 🤖 \n\nTo master this, I suggest:\n- 📝 Trying the **AI Quiz** for practice.\n- 📖 Reviewing your **Study Plan**.\n- 🎯 Taking quick breaks using the **Focus Guardian**.\n\nKeep pushing forward, you're making excellent progress! ✨`;
       }
     }
 
