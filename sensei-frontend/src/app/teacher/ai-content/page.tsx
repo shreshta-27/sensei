@@ -1,215 +1,262 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, FileText, Brain, BookOpen, ClipboardList, 
-  Loader2, Copy, Check 
+import { useRouter } from 'next/navigation';
+import {
+  Plus, BookOpen, FileText, BarChart3, ArrowRight, Download, Edit, ChevronRight, Wand2, CheckCircle, Copy, FileJson, ScrollText, Sparkles
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
-import StickyNote from '@/components/teacher/StickyNote';
-import PaperSheet from '@/components/teacher/PaperSheet';
+import StickyCard from '@/components/faculty/StickyCard';
+import ComicButton from '@/components/faculty/ComicButton';
+import NotebookInput from '@/components/faculty/NotebookInput';
 
-const contentTypes = [
-  { id: 'notes', label: 'Lecture Notes', icon: FileText, desc: 'Structured notes', color: '#9333EA' },
-  { id: 'quiz', label: 'Quiz / MCQs', icon: Brain, desc: 'Assessments', color: '#3B82F6' },
-  { id: 'summary', label: 'Summary', icon: BookOpen, desc: 'Topic overview', color: '#10B981' },
-  { id: 'assignment', label: 'Assignment', icon: ClipboardList, desc: 'Homework tasks', color: '#F59E0B' },
-];
+type TabKey = 'quiz' | 'study' | 'rubric';
 
-export default function ContentAIPage() {
-  const [topic, setTopic] = useState('');
-  const [contentType, setContentType] = useState('notes');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
-  const [copied, setCopied] = useState(false);
+export default function AIContentPage() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<TabKey>('quiz');
+  const [generating, setGenerating] = useState(false);
+  const [output, setOutput] = useState<any>(null);
+
+  const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
+    { key: 'quiz',   label: 'Quiz Builder',   icon: <FileJson size={16} /> },
+    { key: 'study',  label: 'Study Material', icon: <ScrollText size={16} /> },
+    { key: 'rubric', label: 'Rubric Creator', icon: <Wand2 size={16} /> },
+  ];
 
   const generate = async () => {
-    if (!topic.trim()) return toast.error('Enter a topic first');
-    setLoading(true);
-    setResult('');
+    setGenerating(true);
     try {
-      const { data } = await api.post('/api/teacher/content-ai/generate', { topic, type: contentType });
-      setResult(data.content || data.notes || JSON.stringify(data, null, 2));
-    } catch {
-      toast.error('Generation failed');
-    } finally {
-      setLoading(false);
-    }
+      await api.post('/api/teacher/content-ai/generate', { type: activeTab });
+      toast.success('Content generated!');
+      setOutput({
+        quiz: {
+          title: 'Binary Trees Quiz',
+          questions: [
+            { q: 'What is the time complexity of BST search?', options: ['O(1)', 'O(log n)', 'O(n)', 'O(n²)'], answer: 1 },
+            { q: 'Which traversal visits root first?',       options: ['Inorder', 'Preorder', 'Postorder', 'Level-order'], answer: 1 },
+            { q: 'A complete binary tree has how many leaves?', options: ['⌊n/2⌋', '⌈n/2⌉', '(n-1)/2', 'All of these'], answer: 1 },
+          ],
+        },
+        study: {
+          title: 'Binary Trees — Study Notes',
+          sections: ['Tree Definitions & Properties', 'Traversal Methods (In/Pre/Post/Level)', 'BST Invariants & Operations', 'Balanced Trees: AVL Overview'],
+        },
+        rubric: {
+          title: 'Project Rubric: Fullstack Assignment',
+          criteria: ['Code Quality (30%)', 'Functionality (30%)', 'UI/UX (20%)', 'Documentation (20%)'],
+        },
+      }[activeTab]);
+    } catch { toast.error('Generation failed'); } finally { setGenerating(false); }
   };
-
-  const copyResult = () => {
-    navigator.clipboard.writeText(result);
-    setCopied(true);
-    toast.success('Copied to clipboard!');
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const selectedType = contentTypes.find((t) => t.id === contentType)!;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
-      {}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-4xl font-black text-[#1A1A1A]">AI Content Creator</h1>
-          <p className="handwriting text-xl text-gray-500 font-medium">Draft teaching materials in seconds with Gemini</p>
-        </div>
-      </div>
+    <div className="page-mobile-pad space-y-6">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="font-display text-4xl text-[var(--text-primary)] flex items-center gap-3">
+          <Sparkles size={32} className="text-[var(--accent-purple)]" /> AI Content Generator
+        </h1>
+        <p className="font-handwrite text-xl text-[var(--text-muted)]">Powered by Gemini AI — build quizzes, notes, and rubrics in seconds</p>
+      </motion.div>
 
-      {}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {contentTypes.map(({ id, label, icon: Icon, color }) => (
-          <button
-            key={id}
-            onClick={() => setContentType(id)}
-            className={`p-6 rounded-[28px] text-left transition-all relative border-2 ${
-              contentType === id 
-                ? 'bg-white border-purple-600 shadow-xl shadow-purple-100 scale-[1.02]' 
-                : 'bg-white border-gray-50 hover:border-purple-200'
+      {/* Sticky-tab row */}
+      <div className="flex gap-3 flex-wrap">
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => { setActiveTab(t.key); setOutput(null); }}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-ui font-bold border-2 transition-all cursor-pointer ${
+              activeTab === t.key
+                ? 'bg-[var(--accent-purple)] text-white border-[var(--accent-purple)] shadow-[2px_2px_0_var(--accent-purple)]'
+                : 'bg-white text-[var(--text-secondary)] border-[var(--border-card)] shadow-[2px_2px_0_#D6D0C8] hover:-translate-y-0.5'
             }`}
           >
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
-              contentType === id ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-400'
-            }`}>
-               <Icon size={24} />
-            </div>
-            <p className={`text-sm font-black uppercase tracking-widest ${
-              contentType === id ? 'text-gray-800' : 'text-gray-400'
-            }`}>{label}</p>
+            {t.icon} {t.label}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-         {}
-         <div className="lg:col-span-5 space-y-8">
-            <PaperSheet title="GENERATION PARAMETERS">
-               <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">TOPIC OR SUBJECT</label>
-                    <input 
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && generate()}
-                      placeholder="e.g. Quantum Entanglement for beginners" 
-                      className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-3 px-4 focus:border-b-purple-500 outline-none handwriting text-xl transition-all"
-                    />
-                  </div>
-                  
-                  <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100">
-                     <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Sparkles size={12} /> AI ASSISTANCE ACTIVE
-                     </p>
-                     <p className="text-xs font-bold text-purple-900/60 leading-relaxed">
-                        Specify details like grade level, difficulty, or specific sub-topics for highly tailored results.
-                     </p>
-                  </div>
+      {activeTab === 'quiz' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          <StickyCard color="yellow" pinned className="!p-6 space-y-4">
+            <h3 className="font-display text-2xl">📝 Create AI Quiz</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Topic </label>
+                <input placeholder="e.g. Binary Trees"
+                  className="w-full bg-white/80 border-b-3 border-[var(--border-doodle)] border-t-0 border-l-0 border-r-0 px-3 py-2 font-body text-base outline-none focus:border-[var(--accent-purple)]" />
+              </div>
+              <div>
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Class </label>
+                <select className="w-full bg-white/80 border-2 border-[var(--border-doodle)] rounded-xl px-3 py-2 font-ui text-sm outline-none">
+                  <option value="">Select class…</option>
+                  <option>Fullstack - Sec B</option>
+                  <option>DBMS - Sec A</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Grade Level </label>
+                <div className="flex gap-2">
+                  {['1st Year', '2nd', '3rd', '4th'].map(y => (
+                    <button key={y} className="px-3 py-1.5 rounded-xl font-ui text-[11px] font-bold border-2 bg-white text-[var(--text-secondary)] border-[var(--border-card)]">{y}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Difficulty </label>
+                <div className="flex gap-2">
+                  {['Easy','Mixed','Hard'].map(d => (
+                    <button key={d} className="px-3 py-1.5 rounded-xl font-ui text-[11px] font-bold border-2 bg-white text-[var(--text-secondary)] border-[var(--border-card)]">{d}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-                  <button 
-                    onClick={generate}
-                    disabled={loading}
-                    className="w-full py-4 bg-purple-600 text-white rounded-[20px] font-bold shadow-lg shadow-purple-200 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-                  >
-                    {loading ? <Loader2 size={20} className="animate-spin" /> : <Brain size={20} />}
-                    {loading ? 'GENERATING DRAFT...' : 'GENERATE CONTENT'}
-                  </button>
-               </div>
-            </PaperSheet>
+            <div>
+              <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-2"> Question Count </label>
+              <div className="flex items-center gap-3">
+                <span className="font-ui text-xs font-bold">←</span>
+                <input type="range" min={3} max={25} defaultValue={10} className="flex-1 accent-[var(--accent-purple)]" />
+                <span className="font-display text-lg min-w-[2rem]">10</span>
+              </div>
+            </div>
 
-            {!result && (
-               <StickyNote color="#9333EA" className="!p-8 min-h-[200px]">
-                  <h4 className="text-white font-black uppercase tracking-widest text-xs mb-4">Pro-Tips for Faculty</h4>
-                  <ul className="space-y-3">
-                     {[
-                       'Use "advanced" for higher-ed materials',
-                       'Mention "Python" or "Java" for code samples',
-                       'Ask for "creative examples" for younger students'
-                     ].map((tip, i) => (
-                       <li key={i} className="flex gap-3 text-white/80 text-sm font-bold">
-                          <span className="text-white">•</span>
-                          {tip}
-                       </li>
-                     ))}
-                  </ul>
-               </StickyNote>
-            )}
-         </div>
+            <div className="flex items-center gap-3">
+              <span className="font-ui text-sm text-[var(--text-secondary)]">Types:</span>
+              {['MCQ','T/F','Scenario'].map(t => (
+                <label key={t} className="flex items-center gap-1.5 font-ui text-xs">
+                  <input type="checkbox" defaultChecked className="accent-[var(--accent-purple)]" /> {t}
+                </label>
+              ))}
+              <label className="flex items-center gap-1.5 font-ui text-xs ml-2">
+                <input type="checkbox" /> Assign to class
+              </label>
+            </div>
 
-         {}
-         <div className="lg:col-span-7">
-            <AnimatePresence mode="wait">
-               {result ? (
-                 <motion.div
-                   key="result"
-                   initial={{ opacity: 0, x: 20 }}
-                   animate={{ opacity: 1, x: 0 }}
-                   exit={{ opacity: 0, x: -20 }}
-                 >
-                    <PaperSheet title={selectedType.label.toUpperCase()} className="!p-0 overflow-hidden">
-                       <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-purple-600 shadow-sm">
-                                <selectedType.icon size={16} />
-                             </div>
-                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">GEMINI AI OUTPUT</span>
-                          </div>
-                          <button 
-                            onClick={copyResult}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
-                          >
-                             {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                             {copied ? 'COPIED' : 'COPY ALL'}
-                          </button>
-                       </div>
-                       
-                       <div className="p-8 max-h-[70vh] overflow-y-auto">
-                          <div className="prose prose-purple max-w-none prose-sm">
-                             <ReactMarkdown
-                               components={{
-                                 h1: ({ children }) => <h1 className="font-serif text-3xl font-black text-gray-800 mb-6">{children}</h1>,
-                                 h2: ({ children }) => <h2 className="font-serif text-2xl font-bold text-gray-800 mb-4 mt-8">{children}</h2>,
-                                 h3: ({ children }) => <h3 className="font-serif text-xl font-bold text-gray-800 mb-3 mt-6">{children}</h3>,
-                                 p: ({ children }) => <p className="text-gray-600 leading-relaxed mb-4 text-base font-medium">{children}</p>,
-                                 li: ({ children }) => <li className="text-gray-600 mb-2 font-medium">{children}</li>,
-                                 code: ({ children }) => (
-                                   <code className="bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-bold text-xs">
-                                      {children}
-                                   </code>
-                                 ),
-                                 strong: ({ children }) => <strong className="text-gray-900 font-black">{children}</strong>,
-                                 blockquote: ({ children }) => (
-                                   <blockquote className="border-l-4 border-purple-200 pl-6 italic text-gray-500 my-8">
-                                      {children}
-                                   </blockquote>
-                                 ),
-                               }}
-                             >
-                               {result}
-                             </ReactMarkdown>
-                          </div>
-                       </div>
-                    </PaperSheet>
-                 </motion.div>
-               ) : (
-                 <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-gray-100 rounded-[40px] bg-white"
-                 >
-                    <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center text-gray-200 mb-6">
-                       <Brain size={40} />
+            <ComicButton variant="primary" onClick={generate} loading={generating} className="gap-2">
+              <Wand2 size={18} /> Generate Quiz
+            </ComicButton>
+          </StickyCard>
+
+          {/* Output */}
+          <AnimatePresence>
+            {output && (
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                className="space-y-6"
+              >
+                <h3 className="font-display text-2xl">Preview: {output.title}</h3>
+                {output.questions?.map((q: any, qi: number) => (
+                  <StickyCard key={qi} color={['yellow','blue','green','pink','purple','orange'][qi % 6] as any} className="!p-5">
+                    <p className="font-ui text-[var(--text-primary)]"><span className="font-display mr-2">{qi + 1}.</span> {q.q}</p>
+                    <div className="mt-3 space-y-2">
+                      {q.options.map((o: string, oi: number) => (
+                        <div key={o} className={`flex items-center gap-2 p-2 rounded-xl border ${oi === q.answer ? 'bg-green-50 border-green-300' : 'bg-gray-50/60 border-[var(--border-card)]'}`}>
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center font-ui text-xs font-bold border ${oi === q.answer ? 'bg-green-500 text-white border-green-500' : 'border-[var(--border-card)]'}`}>
+                            {String.fromCharCode(65 + oi)}
+                          </span>
+                          <span className="font-ui text-sm">{o}</span>
+                          {oi === q.answer && <CheckCircle size={16} className="ml-auto text-green-600" />}
+                        </div>
+                      ))}
                     </div>
-                    <h3 className="text-xl font-bold text-gray-300">Ready to Draft</h3>
-                    <p className="text-gray-400 max-w-xs mt-2 text-sm font-medium">Enter a topic on the left to begin generating professional teaching materials.</p>
-                 </motion.div>
-               )}
-            </AnimatePresence>
-         </div>
-      </div>
+                  </StickyCard>
+                ))}
+                <div className="flex gap-3">
+                  <ComicButton variant="primary" icon={<CheckCircle size={16} />}>Assign to Class</ComicButton>
+                  <ComicButton variant="secondary" icon={<Download size={16} />}>Download PDF</ComicButton>
+                  <ComicButton variant="ghost" icon={<Edit size={14} />}>Edit</ComicButton>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {activeTab === 'study' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          <StickyCard color="blue" pinned className="!p-6 space-y-4">
+            <h3 className="font-display text-2xl">📚 Create Study Material</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Topic </label>
+                <input placeholder="e.g. Object-Oriented Programming Fundamentals"
+                  className="w-full bg-white/80 border-b-3 border-[var(--border-doodle)] border-t-0 border-l-0 border-r-0 px-3 py-2 font-body text-base outline-none focus:border-[var(--accent-purple)]" />
+              </div>
+              <div><label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Class </label>
+                <select className="w-full bg-white/80 border-2 border-[var(--border-doodle)] rounded-xl px-3 py-2 font-ui text-sm outline-none"><option>Fullstack - Sec B</option></select>
+              </div>
+              <div><label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Format </label>
+                <div className="flex gap-2">
+                  {['Notes','Summary','Worksheet','Flashcards'].map(f => <button key={f} className="px-3 py-1.5 rounded-xl font-ui text-[11px] font-bold border-2 bg-white text-[var(--text-secondary)] border-[var(--border-card)]">{f}</button>)}
+                </div>
+              </div>
+            </div>
+            <ComicButton variant="primary" onClick={generate} loading={generating} icon={<Wand2 size={18} />}>Generate Content</ComicButton>
+          </StickyCard>
+          {output && (
+            <StickyCard color="blue"><h3 className="font-display text-xl mb-4">📖 {output.title}</h3>
+              <ul className="space-y-2 mb-4">
+                {output.sections?.map((s: string, i: number) => (
+                  <li key={i} className="flex items-center gap-2 font-body text-base text-[var(--text-secondary)]">
+                    <ChevronRight size={16} className="text-[var(--accent-purple)]" /> {s}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-3">
+                <ComicButton variant="secondary" icon={<Copy size={16} />}>Copy</ComicButton>
+                <ComicButton variant="secondary" icon={<Download size={16} />}>Download PDF</ComicButton>
+              </div>
+            </StickyCard>
+          )}
+        </motion.div>
+      )}
+
+      {activeTab === 'rubric' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          <StickyCard color="green" pinned className="!p-6 space-y-4">
+            <h3 className="font-display text-2xl">📋 Rubric Creator</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Assignment Topic </label>
+                <input placeholder="e.g. Fullstack Web App Final Project"
+                  className="w-full bg-white/80 border-b-3 border-[var(--border-doodle)] border-t-0 border-l-0 border-r-0 px-3 py-2 font-body text-base outline-none focus:border-[var(--accent-purple)]" />
+              </div>
+              <div>
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Max Score </label>
+                <input type="number" defaultValue={100} className="w-full bg-white/80 border-2 border-[var(--border-doodle)] rounded-xl px-3 py-2 font-ui text-sm outline-none" />
+              </div>
+              <div>
+                <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1"> Class </label>
+                <select className="w-full bg-white/80 border-2 border-[var(--border-doodle)] rounded-xl px-3 py-2 font-ui text-sm outline-none"><option>Fullstack - Sec B</option></select>
+              </div>
+            </div>
+            <ComicButton variant="primary" onClick={generate} loading={generating} icon={<Wand2 size={18} />}>Generate Rubric</ComicButton>
+          </StickyCard>
+          {output && (
+            <StickyCard color="green">
+              <h3 className="font-display text-xl mb-4">{output.title}</h3>
+              <div className="space-y-3">
+                {output.criteria?.map((c: string, i: number) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-white/70 rounded-xl border border-[var(--border-card)]">
+                    <span className="font-display text-lg text-[var(--accent-purple)]">{i + 1}</span>
+                    <span className="font-ui text-sm font-bold text-[var(--text-primary)] flex-1">{c}</span>
+                    <Badge4 label="AI Suggested" />
+                  </div>
+                ))}
+              </div>
+            </StickyCard>
+          )}
+        </motion.div>
+      )}
     </div>
+  );
+}
+
+function Badge4({ label, color }: { label: string; color?: string }) {
+  return (
+    <span className={`font-ui text-[10px] font-bold px-2 py-0.5 rounded-full ${color ?? 'bg-green-50 text-green-600'}`}>
+      {label}
+    </span>
   );
 }

@@ -188,7 +188,7 @@ export default function LandingPage() {
     { icon: Shield,        color: '#2E7D32', bg: '#E8F5E9', title: 'For Admins',   desc: 'System-wide analytics and AI-powered risk insights.', features: ['University Dashboard', 'Dropout Risk Prediction', 'Performance Analytics', 'Intervention Management', 'Department Reports'] },
   ];
 
-  const fadeUp = { hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.34, 1.56, 0.64, 1] } } };
+  const fadeUp = { hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] } } };
   const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } };
 
   return (

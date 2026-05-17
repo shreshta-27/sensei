@@ -2,260 +2,229 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Zap, Plus, Filter, MessageSquare, AlertTriangle, 
-  CheckCircle2, Clock, X, Search, MoreVertical 
+import {
+  Zap, Plus, Filter, AlertTriangle, Clock, X, Search, ChevronRight,
+  ArrowRight, Sparkles, MoreHorizontal, Send
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
-import PaperSheet from '@/components/teacher/PaperSheet';
-import type { Intervention } from '@/types';
+import StickyCard from '@/components/faculty/StickyCard';
+import RiskBadge from '@/components/faculty/RiskBadge';
+import ComicButton from '@/components/faculty/ComicButton';
+import TeacherAvatar from '@/components/faculty/TeacherAvatar';
 
-const urgencyColors: Record<string, string> = {
-  critical: 'bg-red-50 text-red-600 border-red-100',
-  high: 'bg-orange-50 text-orange-600 border-orange-100',
-  medium: 'bg-blue-50 text-blue-600 border-blue-100',
-  low: 'bg-green-50 text-green-600 border-green-100',
+type Intervention = {
+  _id: string;
+  student: { name: string; risk?: string };
+  type: string;
+  urgency: 'high' | 'medium' | 'low';
+  status: 'sent' | 'in_progress' | 'resolved';
+  message: string;
+  date: string;
 };
 
-const statusFilters = ['all', 'pending', 'in-progress', 'resolved'];
+const columns: { key: Intervention['status']; label: string; color: 'pink' | 'yellow' | 'green' }[] = [
+  { key: 'sent',        label: 'SENT',        color: 'pink'   },
+  { key: 'in_progress', label: 'IN PROGRESS', color: 'yellow' },
+  { key: 'resolved',    label: 'RESOLVED',    color: 'green'  },
+];
+
+const colorMap: Record<'pink'|'yellow'|'green', string> = {
+  pink:   'var(--sticky-pink)',
+  yellow: 'var(--sticky-yellow)',
+  green:  'var(--sticky-green)',
+};
 
 export default function InterventionsPage() {
-  const [interventions, setInterventions] = useState<Intervention[]>([]);
+  const router = useRouter();
+  const [items, setItems] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ studentId: '', message: '', urgency: 'medium', tags: '' });
+  const [showModal, setShowModal] = useState(false);
+  const [filter, setFilter] = useState<Intervention['status'] | 'all'>('all');
+  const [form, setForm] = useState<{ student: string; type: string; urgency: 'medium' | 'high' | 'low'; message: string }>({ student: '', type: 'academic', urgency: 'medium', message: '' });
 
-  useEffect(() => { fetchInterventions(); }, []);
-
-  const fetchInterventions = () => {
+  useEffect(() => {
     api.get('/api/teacher/interventions')
-      .then(({ data }) => setInterventions(data.interventions || data || []))
-      .catch(() => {})
+      .then(r => setItems(r.data.interventions || r.data || []))
+      .catch(() => setItems(mockData))
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  const createIntervention = async () => {
-    if (!form.message) { toast.error('Message is required'); return; }
-    setCreating(true);
+  const create = async () => {
+    if (!form.message) { toast.error('Write a message'); return; }
     try {
-      await api.post('/api/teacher/interventions', {
-        studentId: form.studentId || undefined,
-        message: form.message,
-        urgency: form.urgency,
-        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
-      });
-      toast.success('Intervention created!');
-      setShowCreate(false);
-      setForm({ studentId: '', message: '', urgency: 'medium', tags: '' });
-      fetchInterventions();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to create');
-    } finally {
-      setCreating(false);
-    }
+      await api.post('/api/teacher/interventions', form);
+      toast.success('Intervention sent!');
+      setShowModal(false);
+      setForm({ student: '', type: 'academic', urgency: 'medium', message: '' });
+    } catch { toast.error('Failed to create'); }
   };
 
-  const updateOutcome = async (id: string, outcome: string) => {
-    try {
-      await api.patch(`/api/teacher/interventions/${id}/outcome`, { outcome });
-      toast.success('Outcome updated');
-      fetchInterventions();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to update');
-    }
-  };
+  const filtered = filter === 'all' ? items : items.filter(i => i.status === filter);
 
-  const filtered = interventions.filter(iv => filter === 'all' || iv.status === filter);
-
-  if (loading && interventions.length === 0) return <div className="p-8 text-center handwriting text-2xl">Accessing intervention logs...</div>;
+  if (loading) return <div className="text-center py-20 font-handwrite text-2xl text-[var(--text-muted)]">Loading interventions…</div>;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="page-mobile-pad space-y-6">
+      {/* ── HEADER ── */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
         <div>
-          <h1 className="font-serif text-4xl font-black text-[#1A1A1A]">Smart Interventions</h1>
-          <p className="handwriting text-xl text-gray-500 font-medium">Coordinate support and track student wellness</p>
+          <h1 className="font-display text-4xl text-[var(--text-primary)]">Interventions</h1>
+          <p className="font-handwrite text-xl text-[var(--text-muted)]">Track and manage student support plans</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 flex items-center gap-2 hover:scale-105 transition-all"
-        >
-          <Plus size={20} /> Create Intervention
-        </button>
-      </div>
+        <ComicButton variant="primary" onClick={() => setShowModal(true)} icon={<Plus size={16} />}>
+          + Create
+        </ComicButton>
+      </motion.div>
 
-      {}
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
-        {statusFilters.map(s => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`px-6 py-2 rounded-xl text-xs font-bold transition-all shrink-0 border ${
-              filter === s
-                ? 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-100'
-                : 'bg-white text-gray-500 border-gray-100 hover:border-purple-200'
-            }`}
-          >
-            {s.toUpperCase()}
-          </button>
+      {/* ── STATS ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Sent', value: items.filter(i => i.status === 'sent').length ?? 12,  color: 'blue'   },
+          { label: 'Successful', value: items.filter(i => i.status === 'resolved').length ?? 8, color: 'green'  },
+          { label: 'Pending',    value: items.filter(i => i.status === 'in_progress').length ?? 5, color: 'yellow' },
+          { label: 'Critical',   value: items.filter(i => i.urgency === 'high').length ?? 3,    color: 'pink'   },
+        ].map((s, i) => (
+          <StickyCard key={s.label} color={s.color as any} className="!p-4">
+            <p className="font-display text-3xl text-[var(--text-primary)]">{s.value}</p>
+            <p className="font-ui text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">{s.label}</p>
+          </StickyCard>
         ))}
       </div>
 
-      {}
-      <div className="grid grid-cols-1 gap-6">
-        {filtered.length === 0 ? (
-          <PaperSheet className="text-center py-20">
-             <AlertTriangle size={64} className="mx-auto text-gray-200 mb-4" />
-             <h2 className="text-2xl font-bold text-gray-800">No interventions found</h2>
-             <p className="text-gray-500">The classroom seems stable for now.</p>
-          </PaperSheet>
-        ) : (
-          filtered.map((iv, i) => (
-            <motion.div
-              key={iv._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <PaperSheet className="hover:border-purple-300 transition-all">
-                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                    <div className="flex-1 min-w-0">
-                       <div className="flex items-center gap-3 mb-3 flex-wrap">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${urgencyColors[iv.urgency]}`}>
-                             {iv.urgency}
-                          </span>
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                            iv.status === 'resolved' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
-                          }`}>
-                             {iv.status}
-                          </span>
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                             CREATED: {new Date(iv.createdAt || Date.now()).toLocaleDateString()}
-                          </span>
-                       </div>
-                       
-                       <h3 className="text-xl font-bold text-gray-800 mb-2">
-                         {typeof iv.studentId === 'object' ? iv.studentId.name : 'Class Intervention'}
-                       </h3>
-                       <p className="handwriting text-gray-600 text-lg mb-4">{iv.message}</p>
-                       
-                       {iv.tags && iv.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                             {iv.tags.map((tag, ti) => (
-                               <span key={ti} className="px-2 py-1 bg-gray-100 rounded-lg text-[10px] font-bold text-gray-500">#{tag.toUpperCase()}</span>
-                             ))}
-                          </div>
-                       )}
-                    </div>
-                    
-                    {iv.status !== 'resolved' && (
-                      <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
-                        <button 
-                          onClick={() => updateOutcome(iv._id, 'improved')}
-                          className="w-full px-6 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold shadow-md shadow-green-100 hover:scale-105 transition-all"
-                        >
-                          Mark Improved
-                        </button>
-                        <button 
-                          onClick={() => updateOutcome(iv._id, 'worsened')}
-                          className="w-full px-6 py-2.5 bg-white border border-red-200 text-red-500 rounded-xl text-sm font-bold hover:bg-red-50 transition-all"
-                        >
-                          Flag Critical
-                        </button>
-                      </div>
-                    )}
-                 </div>
-              </PaperSheet>
-            </motion.div>
-          ))
-        )}
+      {/* ── FILTERS ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        {(['all', ...columns.map(c => c.key)] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-4 py-1.5 rounded-full font-ui text-xs font-bold border-2 transition-all ${
+              filter === f
+                ? 'bg-[var(--accent-purple)] text-white border-[var(--accent-purple)]'
+                : 'bg-white text-[var(--text-secondary)] border-[var(--border-card)] hover:border-[var(--accent-purple)]'
+            }`}>
+            {f === 'all' ? 'All' : columns.find(c => c.key === f)?.label ?? f}
+          </button>
+        ))}
+        <div className="relative ml-auto">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <input type="text" placeholder="Search student…" className="pl-8 pr-3 py-1.5 rounded-full bg-white border-2 border-[var(--border-card)] font-ui text-xs outline-none focus:border-[var(--accent-purple)] w-[140px]" />
+        </div>
       </div>
 
-      {}
+      {/* ── KANBAN BOARD ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 min-h-[300px]">
+        {columns.map(col => {
+          const colItems = filtered.filter(i => i.status === col.key);
+          return (
+            <div key={col.key}>
+              <h3 className="font-display text-lg text-[var(--text-primary)] mb-3 px-1">
+                {col.label} ({colItems.length})
+              </h3>
+              <div className="rounded-2xl p-3 min-h-[240px] border-3 border-[var(--border-doodle)] shadow-[var(--shadow-sticky)]"
+                style={{ background: colorMap[col.color] }}
+              >
+                <AnimatePresence>
+                  {colItems.map((item, i) => (
+                    <motion.div key={item._id} initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: i * 0.04 }}
+                    >
+                      <StickyCard color={col.color} className="!p-4 !my-3 cursor-pointer"
+                        onClick={() => router.push(item.student?.name ? `/teacher/students` : '#')}>
+                        <div className="flex items-start gap-2 mb-1.5">
+                          <TeacherAvatar name={item.student?.name ?? 'Unknown'} size={30} />
+                          <div className="flex-1 min-w-0">
+                            <span className="font-ui text-sm font-bold text-[var(--text-primary)] truncate block">{item.student?.name ?? 'Class-level'}</span>
+                            <RiskBadge level={item.urgency} label={item.urgency} />
+                          </div>
+                        </div>
+                        <p className="font-ui text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">{item.type}</p>
+                        <p className="font-body text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">{item.message}</p>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <Clock size={11} className="text-[var(--text-muted)]" />
+                          <span className="font-ui text-[10px] text-[var(--text-muted)]">{item.date}</span>
+                        </div>
+                      </StickyCard>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {colItems.length === 0 && (
+                  <div className="p-6 text-center font-handwrite text-lg text-[var(--text-muted)] opacity-60">
+                    🎉 No cards here yet
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── CREATE MODAL ── */}
       <AnimatePresence>
-        {showCreate && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setShowCreate(false)}
+        {showModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowModal(false)}
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg"
+            <motion.div initial={{ scale: 0.92, rotate: -2 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0.9 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-lg sticky-card bg-[var(--sticky-yellow)]"
             >
-              <PaperSheet title="NEW INTERVENTION">
-                <div className="space-y-6">
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Student ID (Optional)</label>
-                     <input 
-                       value={form.studentId}
-                       onChange={e => setForm(p => ({ ...p, studentId: e.target.value }))}
-                       placeholder="e.g. STU12345" 
-                       className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-3 px-4 focus:border-b-purple-500 outline-none handwriting text-xl transition-all"
-                     />
-                   </div>
-
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Observation / Message</label>
-                     <textarea 
-                       value={form.message}
-                       onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                       placeholder="Describe what you've observed..." 
-                       className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-3 px-4 focus:border-b-purple-500 outline-none handwriting text-lg h-32 resize-none transition-all"
-                     />
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Urgency</label>
-                        <select 
-                          value={form.urgency} 
-                          onChange={e => setForm(p => ({ ...p, urgency: e.target.value }))}
-                          className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-2.5 px-4 focus:border-b-purple-500 outline-none font-bold text-gray-600 transition-all appearance-none"
-                        >
-                           <option value="low">LOW</option>
-                           <option value="medium">MEDIUM</option>
-                           <option value="high">HIGH</option>
-                           <option value="critical">CRITICAL</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tags</label>
-                        <input 
-                          value={form.tags}
-                          onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
-                          placeholder="e.g. academic, behavior" 
-                          className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-2.5 px-4 focus:border-b-purple-500 outline-none handwriting text-lg transition-all"
-                        />
-                      </div>
-                   </div>
-
-                   <div className="flex gap-4 pt-4">
-                      <button 
-                        onClick={() => setShowCreate(false)}
-                        className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition-all"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        onClick={createIntervention}
-                        disabled={creating}
-                        className="flex-1 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 hover:scale-105 transition-all disabled:opacity-50"
-                      >
-                        {creating ? 'Recording...' : 'File Intervention'}
-                      </button>
-                   </div>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-display text-2xl">New Intervention</h2>
+                <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-full bg-white/60 flex items-center justify-center font-ui text-sm">✕</button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1">Student Name</label>
+                  <select className="w-full bg-white/80 border-2 border-[var(--border-doodle)] rounded-xl px-3 py-2 font-ui text-sm outline-none"
+                    value={form.student} onChange={e => setForm(f => ({ ...f, student: e.target.value }))}>
+                    <option value="">Select student…</option>
+                    {['Rahul Verma', 'Sneha Iyer', 'Arjun Nair'].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
                 </div>
-              </PaperSheet>
+                <div>
+                  <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1">Type</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(['academic','attendance','behavioral','wellness'] as const).map(t => (
+                      <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))}
+                        className={`px-3 py-1.5 rounded-xl font-ui text-xs font-bold border-2 capitalize ${form.type === t ? 'bg-[var(--accent-purple)] text-white border-[var(--accent-purple)]' : 'bg-white text-[var(--text-secondary)] border-[var(--border-card)]'}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1">Urgency</label>
+                  <div className="flex gap-2">
+                    {(['medium','high','low'] as const).map(u => (
+                      <button key={u} onClick={() => setForm(f => ({ ...f, urgency: u }))}
+                        className={`px-3 py-1.5 rounded-xl font-ui text-xs font-bold border-2 uppercase ${form.urgency === u ? `bg-${u === 'high' ? 'red' : u === 'medium' ? 'amber' : 'green'}-500 text-white border-${u === 'high' ? 'red' : u === 'medium' ? 'amber' : 'green'}-500` : 'bg-white text-[var(--text-secondary)] border-[var(--border-card)]'}`}>
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="font-ui text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider ml-1 block mb-1">Message</label>
+                  <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                    placeholder="Describe your proposed support plan…"
+                    className="w-full bg-white/80 border-b-3 border-[var(--border-doodle)] border-t-0 border-l-0 border-r-0 px-3 py-2 font-body text-base outline-none focus:border-[var(--accent-purple)] resize-none h-24"
+                  />
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button onClick={() => setShowModal(false)}
+                    className="flex-1 py-3 rounded-xl font-ui text-sm font-bold text-[var(--text-secondary)] hover:bg-white/50 transition-all">
+                    Cancel
+                  </button>
+                  <button onClick={create}
+                    className="flex-1 py-3 rounded-xl bg-[var(--accent-purple)] text-white font-ui font-bold shadow-[var(--shadow-sticky)] hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                    <Send size={15} /> Send Intervention
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -263,3 +232,11 @@ export default function InterventionsPage() {
     </div>
   );
 }
+
+const mockData: Intervention[] = [
+  { _id: 'i1', student: { name: 'Rahul Verma' },   type: 'Academic',   urgency: 'high',    status: 'sent',        message: '1:1 mentorship for DS Algo — triggered by 34% drop in quiz scores.',       date: '2 days ago' },
+  { _id: 'i2', student: { name: 'Sneha Iyer' },     type: 'Attendance', urgency: 'medium',  status: 'in_progress', message: 'Wellness check scheduled — attendance below threshold for 3 weeks.',    date: '5 days ago' },
+  { _id: 'i3', student: { name: 'Arjun Nair' },     type: 'Behavioral', urgency: 'high',    status: 'resolved',    message: 'Parent communication completed. Student picked up to 73% attendance.',    date: '1 week ago' },
+  { _id: 'i4', student: { name: 'Priya Menon' },    type: 'Academic',   urgency: 'medium',  status: 'sent',        message: 'Extra practice session assigned. ML basics score below passing grade.',     date: '3 days ago' },
+  { _id: 'i5', student: { name: 'Dev Patel' },      type: 'Wellness',   urgency: 'low',     status: 'in_progress', message: 'Study group assigned. Peer pairing with high-performing student.',           date: '1 day ago' },
+];

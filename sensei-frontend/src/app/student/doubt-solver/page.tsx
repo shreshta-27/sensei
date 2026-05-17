@@ -287,7 +287,7 @@ export default function DoubtSolverPage() {
         <p className="text-lg font-body text-s-muted">Snap it, speak it, or type it — Sensei solves it!</p>
       </div>
 
-      {}
+
       <div className="comic-card p-6 bg-white space-y-6">
         <div className="flex justify-center gap-4">
           <button 
@@ -333,12 +333,15 @@ export default function DoubtSolverPage() {
               <ImageIcon size={18} /> Upload
             </button>
           </div>
+        </div>
 
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
-            accept="image}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept="image/*"
+          onChange={handleFileUpload}
+        />
         <AnimatePresence>
           {isRecording && (
             <motion.div
@@ -429,7 +432,7 @@ export default function DoubtSolverPage() {
 
       <canvas ref={canvasRef} width={400} height={300} className="hidden" />
 
-      {}
+
       <AnimatePresence>
         {solution && (
           <motion.div 

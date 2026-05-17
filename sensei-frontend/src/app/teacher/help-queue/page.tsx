@@ -2,267 +2,213 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  HelpCircle, CheckCircle2, Clock, MessageSquare, 
-  RefreshCw, Users 
+import {
+  HelpCircle, MessageCircle, Sparkles, Send, Clock, User,
+  AlertTriangle, X, Send as SendIcon, MoreHorizontal
 } from 'lucide-react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
+import StickyCard from '@/components/faculty/StickyCard';
+import RiskBadge from '@/components/faculty/RiskBadge';
+import ComicButton from '@/components/faculty/ComicButton';
+import TeacherAvatar from '@/components/faculty/TeacherAvatar';
 import { useSocket } from '@/hooks/useSocket';
-import StickyNote from '@/components/teacher/StickyNote';
-import PaperSheet from '@/components/teacher/PaperSheet';
 
-interface Ticket {
+type Ticket = {
   _id: string;
-  studentId: { name: string; studentId: string; email: string; avatar?: string };
+  student: { name: string; department?: string };
+  subject: string;
+  concept?: string;
   message: string;
-  status: string;
-  category?: string;
-  urgency?: 'low' | 'medium' | 'high';
-  response?: string;
+  urgency: 'high' | 'medium' | 'low';
+  status: 'pending' | 'in_progress' | 'resolved';
   createdAt: string;
-  respondedAt?: string;
-}
+};
 
-export default function TeacherHelpQueuePage() {
+export default function HelpQueuePage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [response, setResponse] = useState('');
-  const [selected, setSelected] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'responded' | 'resolved'>('all');
-  const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'resolved'>('all');
+  const [replying, setReplying]   = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
   const { on } = useSocket('/teacher');
 
-  const fetchTickets = async (showLoader = false) => {
-    if (showLoader) setRefreshing(true);
-    try {
-      const { data } = await api.get('/api/help-ticket');
-      setTickets(data.tickets || []);
-    } catch {
-      toast.error('Failed to load help queue');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  useEffect(() => {
+    api.get('/api/teacher/help-queue')
+      .then(r => setTickets(r.data.tickets || r.data || []))
+      .catch(() => setTickets(mockTickets))
+      .finally(() => setLoading(false));
 
-  useEffect(() => { 
-    fetchTickets(); 
-    const cleanupNew = on('help:new_ticket', (newTicket: any) => {
-      setTickets(prev => prev.some(t => t._id === newTicket._id) ? prev : [newTicket, ...prev]);
-      toast.success('New help ticket received!', { icon: '🙋' });
+    const off = on('help:new_ticket', (...args: unknown[]) => {
+      const t = args[0] as Ticket;
+      setTickets(prev => [t, ...prev]);
+      toast.success(`New ticket from ${t.student?.name ?? 'Unknown'}!`, { icon: '🙋' });
     });
-    return () => { cleanupNew(); };
+    return () => { off(); };
   }, [on]);
 
-  const handleRespond = async (id: string) => {
-    if (!response.trim()) return toast.error('Enter a response');
-    setSending(true);
+  const filtered = filter === 'all' ? tickets : tickets.filter(t => t.status === filter);
+
+  const respond = async (id: string) => {
+    if (!replyText.trim()) return;
     try {
-      const { data } = await api.patch(`/api/help-ticket/${id}/respond`, { response });
-      toast.success('Response sent!');
-      setTickets((prev) => prev.map((t) => t._id === id ? data : t));
-      setResponse('');
-      setSelected(null);
-    } catch {
-      toast.error('Failed to send response');
-    } finally {
-      setSending(false);
-    }
+      await api.post(`/api/teacher/help-queue/${id}/respond`, { response: replyText });
+      setTickets(prev => prev.map(t => t._id === id ? { ...t, status: 'in_progress' as const } : t));
+      toast.success('Reply sent!');
+      setReplying(null);
+      setReplyText('');
+    } catch { toast.error('Failed to send reply'); }
   };
 
-  const handleResolve = async (id: string) => {
-    try {
-      const { data } = await api.patch(`/api/help-ticket/${id}/resolve`);
-      toast.success('Ticket resolved!');
-      setTickets((prev) => prev.map((t) => t._id === id ? data : t));
-    } catch {
-      toast.error('Failed to resolve ticket');
-    }
-  };
+  const cols = [
+    { key: 'pending',      label: 'PENDING',       color: 'orange' as const },
+    { key: 'in_progress',  label: 'IN PROGRESS',   color: 'yellow' as const },
+    { key: 'resolved',     label: 'RESOLVED',       color: 'green'  as const },
+  ];
 
-  if (loading && tickets.length === 0) return <div className="p-8 text-center handwriting text-2xl">Consulting student queue...</div>;
-
-  const filtered = tickets.filter((t) =>
-    filter === 'all' ? true : filter === 'pending' ? t.status === 'pending' : t.status === filter
-  );
-
-  const stats = {
-    total: tickets.length,
-    pending: tickets.filter(t => t.status === 'pending').length,
-    responded: tickets.filter(t => t.status === 'responded').length,
-    resolved: tickets.filter(t => t.status === 'resolved').length,
-  };
+  if (loading) return <div className="text-center py-20 font-handwrite text-2xl text-[var(--text-muted)]">Opening help queue…</div>;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
-      {}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-4xl font-black text-[#1A1A1A]">Help Queue</h1>
-          <p className="handwriting text-xl text-gray-500 font-medium">Real-time student support & intervention</p>
+    <div className="page-mobile-pad space-y-6">
+      {/* ── HEADER ── */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border-2 border-blue-100 flex items-center justify-center text-blue-600">
+            <HelpCircle size={24} />
+          </div>
+          <div>
+            <h1 className="font-display text-4xl text-[var(--text-primary)]">Help Queue</h1>
+            <p className="font-handwrite text-xl text-[var(--text-muted)]">
+              Student questions · {tickets.filter(t => t.status === 'pending').length} pending
+            </p>
+          </div>
+          {tickets.filter(t => t.status === 'pending').length > 0 && (
+            <motion.span
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="inline-flex w-3 h-3 rounded-full bg-red-500"
+            />
+          )}
         </div>
-        <button
-          onClick={() => fetchTickets(true)}
-          disabled={refreshing}
-          className="px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 flex items-center gap-2 hover:scale-105 transition-all disabled:opacity-50"
-        >
-          <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
-          {refreshing ? 'Syncing...' : 'Sync Queue'}
-        </button>
-      </div>
+      </motion.div>
 
-      {}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {[
-          { label: 'TOTAL', value: stats.total, color: 'blue' as const },
-          { label: 'PENDING', value: stats.pending, color: 'yellow' as const },
-          { label: 'RESPONDED', value: stats.responded, color: 'green' as const },
-          { label: 'RESOLVED', value: stats.resolved, color: 'purple' as const },
-        ].map((stat, i) => (
-          <StickyNote key={stat.label} color={stat.color} rotation={i % 2 === 0 ? -1 : 1}>
-             <span className="text-[10px] font-black tracking-widest text-gray-600 uppercase">{stat.label}</span>
-             <span className="text-4xl font-black text-[#1A1A1A] mt-auto">{stat.value}</span>
-          </StickyNote>
-        ))}
-      </div>
-
-      {}
-      <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl w-fit">
-        {(['all', 'pending', 'responded', 'resolved'] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-              filter === f ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            {f}
+      {/* ── FILTER CHIPS ── */}
+      <div className="flex gap-2">
+        {(['all', 'pending', 'in_progress', 'resolved'] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-4 py-1.5 rounded-full font-ui text-xs font-bold border-2 transition-all ${
+              filter === f ? 'bg-[var(--accent-purple)] text-white border-[var(--accent-purple)]' : 'bg-white text-[var(--text-secondary)] border-[var(--border-card)]'
+            }`}>
+            {f === 'in_progress' ? 'IN PROGRESS' : f.toUpperCase()}
           </button>
         ))}
       </div>
 
-      {}
-      <div className="space-y-6">
-        {filtered.length === 0 ? (
-          <PaperSheet className="text-center py-20">
-             <HelpCircle size={64} className="mx-auto text-gray-200 mb-4" />
-             <h2 className="text-2xl font-bold text-gray-800">Clear Desk Policy!</h2>
-             <p className="text-gray-500">No student queries in this category currently.</p>
-          </PaperSheet>
-        ) : (
-          filtered.map((t, i) => {
-            const urgencyColor = t.urgency === 'high' ? 'text-red-500' : t.urgency === 'medium' ? 'text-orange-500' : 'text-green-500';
-            
-            return (
-              <motion.div
-                key={t._id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+      {/* ── KANBAN ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {cols.map(({ key, label, color }) => {
+          const colItems = filtered.filter(t => t.status === key);
+          return (
+            <div key={key}>
+              <h3 className="font-display text-lg text-[var(--text-primary)] mb-3 px-1">
+                {label} ({colItems.length})
+              </h3>
+              <div className="rounded-2xl p-3 min-h-[260px] border-3 border-[var(--border-doodle)] shadow-[var(--shadow-sticky)] space-y-3"
+                style={{ background: `var(--${color === 'orange' ? 'sticky-orange' : color === 'yellow' ? 'sticky-yellow' : 'sticky-green'})` }}
               >
-                <PaperSheet className="relative overflow-hidden group hover:border-purple-200 transition-all">
-                   <div className="flex flex-col md:flex-row gap-6">
-                      {}
-                      <div className="flex-1 space-y-4">
-                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                               <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-600 font-bold shadow-sm">
-                                  {t.studentId?.name.charAt(0)}
-                               </div>
-                               <div>
-                                  <h3 className="text-lg font-bold text-gray-800">{t.studentId?.name}</h3>
-                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: {t.studentId?.studentId}</p>
-                               </div>
-                            </div>
-                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current ${urgencyColor} bg-opacity-5`}>
-                               {t.urgency || 'MEDIUM'} URGENCY
-                            </div>
-                         </div>
-                         
-                         <div className="bg-[#FFFDF6] p-6 rounded-2xl border border-orange-100 relative">
-                            <div className="absolute left-4 top-0 bottom-0 w-px bg-red-100" />
-                            <p className="handwriting text-xl text-gray-700 pl-4">"{t.message}"</p>
-                         </div>
+                <AnimatePresence>
+                  {colItems.map((t, i) => (
+                    <motion.div key={t._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                    >
+                      <StickyCard color={color} className="!p-4">
+                        {/* Student header */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <TeacherAvatar name={t.student?.name ?? '?'} size={30} />
+                          <span className="font-ui text-sm font-bold text-[var(--text-primary)] truncate flex-1">
+                            {t.student?.name ?? 'Unknown'}
+                          </span>
+                          <span className="font-ui text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/60 text-[var(--text-muted)]">
+                            {t.subject?.slice(0, 12)}
+                          </span>
+                          <RiskBadge level={t.urgency} />
+                        </div>
 
-                         {t.response && (
-                           <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                              <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">YOUR RESPONSE</p>
-                              <p className="text-sm font-bold text-purple-800">{t.response}</p>
-                           </div>
-                         )}
-                      </div>
+                        {/* Message */}
+                        <p className="font-body text-sm text-[var(--text-secondary)] mb-2 line-clamp-3">
+                          {t.message}
+                        </p>
 
-                      {}
-                      <div className="md:w-64 shrink-0 flex flex-col gap-3 justify-center">
-                         <div className="text-right mb-auto">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">RECEIVED</p>
-                            <p className="text-xs font-bold text-gray-600">{new Date(t.createdAt).toLocaleString()}</p>
-                         </div>
-                         
-                         <div className="space-y-2">
-                            {t.status !== 'resolved' && (
-                              <button 
-                                onClick={() => setSelected(selected === t._id ? null : t._id)}
-                                className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-100 flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
-                              >
-                                 <MessageSquare size={16} /> {t.response ? 'Update' : 'Respond'}
-                              </button>
-                            )}
-                            {t.status === 'responded' && (
-                              <button 
-                                onClick={() => handleResolve(t._id)}
-                                className="w-full py-3 bg-green-500 text-white rounded-xl font-bold shadow-lg shadow-green-100 flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
-                              >
-                                 <CheckCircle2 size={16} /> Resolve
-                              </button>
-                            )}
-                            {t.status === 'resolved' && (
-                               <div className="w-full py-3 bg-gray-50 text-gray-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-100">
-                                  <CheckCircle2 size={16} /> RESOLVED
-                               </div>
-                            )}
-                         </div>
-                      </div>
-                   </div>
+                        {/* Concept tag */}
+                        {t.concept && (
+                          <span className="inline-block font-ui text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 mb-2">
+                            {t.concept}
+                          </span>
+                        )}
 
-                   {}
-                   <AnimatePresence>
-                      {selected === t._id && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                        >
-                           <div className="mt-6 pt-6 border-t border-dashed border-gray-200">
-                              <textarea 
-                                value={response}
-                                onChange={e => setResponse(e.target.value)}
-                                placeholder="Type your response to the student..."
-                                className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 p-4 focus:border-b-purple-500 outline-none handwriting text-xl h-32 resize-none transition-all"
+                        {/* Timestamp */}
+                        <div className="flex items-center gap-1.5 mb-3">
+                          <Clock size={11} className="text-[var(--text-muted)]" />
+                          <span className="font-ui text-[10px] text-[var(--text-muted)]">{t.createdAt}</span>
+                        </div>
+
+                        {/* Actions */}
+                        {key === 'pending' && (
+                          <ComicButton variant="primary" size="sm" icon={<Send size={13} />}
+                            onClick={() => { setReplying(t._id); setReplyText(''); }}
+                            className="w-full justify-center"
+                          >
+                            Reply
+                          </ComicButton>
+                        )}
+
+                        {/* Inline reply textarea */}
+                        <AnimatePresence>
+                          {replying === t._id && (
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                              className="mt-2 overflow-hidden"
+                            >
+                              <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
+                                placeholder="Type your response…"
+                                className="w-full bg-white/90 border-b-3 border-[var(--border-doodle)] border-t-0 border-l-0 border-r-0 font-body text-sm outline-none focus:border-[var(--accent-purple)] resize-none h-16 px-2"
                               />
-                              <div className="flex gap-3 mt-4">
-                                 <button onClick={() => setSelected(null)} className="flex-1 py-3 bg-white text-gray-500 font-bold border border-gray-100 rounded-xl">Cancel</button>
-                                 <button 
-                                   onClick={() => handleRespond(t._id)}
-                                   disabled={sending}
-                                   className="flex-2 px-8 py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-200 disabled:opacity-50"
-                                 >
-                                    {sending ? 'Sending...' : 'Send Response'}
-                                 </button>
+                              <div className="flex gap-2 mt-2 justify-end">
+                                <button onClick={() => setReplying(null)}
+                                  className="font-ui text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2 py-1">
+                                  Cancel
+                                </button>
+                                <button onClick={() => respond(t._id)}
+                                  className="font-ui text-xs font-bold text-white bg-[var(--accent-purple)] px-3 py-1 rounded-xl hover:-translate-y-0.5 transition-all">
+                                  <Send size={12} className="inline mr-1" /> Send
+                                </button>
                               </div>
-                           </div>
-                        </motion.div>
-                      )}
-                   </AnimatePresence>
-                </PaperSheet>
-              </motion.div>
-            );
-          })
-        )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </StickyCard>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {colItems.length === 0 && (
+                  <div className="p-6 text-center font-handwrite text-lg text-[var(--text-muted)] opacity-60">
+                    {key === 'pending'    ? '🎉 All caught up!' :
+                     key === 'in_progress'? 'Nothing in progress' :
+                                           'Nothing resolved yet'}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
+
+const mockTickets: Ticket[] = [
+  { _id: 't1', student: { name: 'Arjun Nair',  department: 'ECE' }, subject: 'Math',    concept: 'Floating Point', urgency: 'high',    status: 'pending',      message: 'I don\'t understand floating point calculation from yesterday\'s lecture. Can someone help?',  createdAt: '2 hours ago' },
+  { _id: 't2', student: { name: 'Devika S.',    department: 'CSE' }, subject: 'DS',      concept: 'Trees',        urgency: 'medium',  status: 'in_progress', message: 'Binary tree traversal is confusing. Especially when to use BFS vs DFS.',                              createdAt: '4 hours ago' },
+  { _id: 't3', student: { name: 'Kiran Mehta',  department: 'CS'  }, subject: 'DBMS',    concept: 'Joins',        urgency: 'low',     status: 'resolved',    message: 'How do LEFT and RIGHT outer joins differ?',                                                       createdAt: '1 day ago' },
+];

@@ -1,200 +1,228 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, CheckCircle2, FileText, X, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import {
+  Upload, FileText, X, CheckCircle, AlertTriangle, Zap,
+  BrainCircuit, Sparkles, Send, Clock, ChevronRight
+} from 'lucide-react';
 import api from '@/lib/axios';
-import StickyNote from '@/components/teacher/StickyNote';
-import PaperSheet from '@/components/teacher/PaperSheet';
+import toast from 'react-hot-toast';
+import StickyCard from '@/components/faculty/StickyCard';
+import ComicButton from '@/components/faculty/ComicButton';
+import { useSocket } from '@/hooks/useSocket';
 
-export default function TeacherUploadPage() {
-  const [file, setFile] = useState<File | null>(null);
+type PipeStage = {
+  label: string;
+  emoji: string;
+  status: 'waiting' | 'running' | 'done';
+  pct: number;
+  count?: string;
+};
+
+const stages: PipeStage[] = [
+  { label: 'Column Normaliser',   emoji: '📋', status: 'waiting', pct: 0   },
+  { label: 'Performance Analyser',emoji: '📊', status: 'waiting', pct: 0   },
+  { label: 'Risk Detector',       emoji: '⚠️', status: 'waiting', pct: 0   },
+  { label: 'AI Insight Generator',emoji: '🤖', status: 'waiting', pct: 0   },
+  { label: 'Auto Interventions',  emoji: '📧', status: 'waiting', pct: 0   },
+  { label: 'Leaderboard Update',  emoji: '🏆', status: 'waiting', pct: 0   },
+];
+
+export default function UploadPage() {
+  const router = useRouter();
+  const [file, setFile]       = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
-  const [dragging, setDragging] = useState(false);
+  const [uploadId, setUploadId] = useState('');
+  const [pipe, setPipe]       = useState<PipeStage[]>(JSON.parse(JSON.stringify(stages)));
+  const [done, setDone]       = useState(false);
   const [classId, setClassId] = useState('');
-  const [classList, setClassList] = useState<any[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [dataType, setDataType] = useState<'marks'|'attendance'|'both'>('marks');
+  const { on, emit } = useSocket('/teacher');
+
+  const latestStep = pipe.findIndex(s => s.status !== 'done');
 
   useEffect(() => {
-    api.get('/api/teacher/classes')
-      .then(({ data }) => setClassList(data.classes || data || []))
-      .catch(() => toast.error('Failed to load classes'));
-  }, []);
+    if (!uploadId) return;
+    const off1 = on('pipeline:progress', (d: any) => {
+      if (d.uploadId !== uploadId) return;
+      setPipe(prev => prev.map((s, i) =>
+        i === d.step ? { ...s, status: d.status as any, pct: d.progress, count: d.count } : s
+      ));
+    });
+    const off2 = on('pipeline:done', (d: any) => {
+      if (d.uploadId !== uploadId) return;
+      setDone(true);
+      toast.success('✅ Analysis complete!');
+    });
+    return () => { off1(); off2(); };
+  }, [uploadId, on]);
 
-  const handleFile = (f: File | null) => {
-    if (!f) return;
-    if (!f.name.endsWith('.csv')) return toast.error('Only CSV files are accepted');
-    setFile(f);
-    setResult(null);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) setFile(f);
   };
+  const handleDrag  = (e: React.DragEvent) => e.preventDefault();
+  const handleFile  = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) setFile(f); };
 
   const handleUpload = async () => {
-    if (!file) return toast.error('Select a CSV file first');
-    if (!classId) return toast.error('Select a class first');
+    if (!file || !classId) { toast.error('Select a class and file first'); return; }
     setUploading(true);
+    const fd = new FormData();
+    fd.append('csv', file);
+    fd.append('classId', classId);
+    fd.append('dataType', dataType);
     try {
-      const formData = new FormData();
-      formData.append('csv', file);
-      formData.append('classId', classId);
-      const { data } = await api.post('/api/teacher/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setResult(data);
-      toast.success('CSV processing pipeline started!');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
+      const { data } = await api.post('/api/teacher/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setUploadId(data.uploadId);
+      setPipe(JSON.parse(JSON.stringify(stages)));
+      emit('pipeline:start', { uploadId: data.uploadId });
+      toast.success('Upload started!');
+    } catch { toast.error('Upload failed'); } finally { setUploading(false); }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
-      {}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-4xl font-black text-[#1A1A1A]">Bulk Data Import</h1>
-          <p className="handwriting text-xl text-gray-500 font-medium">Upload student records via CSV for instant processing</p>
+    <div className="page-mobile-pad space-y-6">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="font-display text-4xl text-[var(--text-primary)]">Upload Marks</h1>
+        <p className="font-handwrite text-xl text-[var(--text-muted)]">Bulk import student records with AI-powered analysis</p>
+      </motion.div>
+
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 font-ui text-xs font-bold text-[var(--text-muted)]">
+        {['1. Upload', '2. AI Analysis', '3. Results'].map((s, i) => (
+          <span key={s} className={`px-3 py-1.5 rounded-full border-2 ${!done && i === 2 ? 'text-[var(--text-muted)]' : done && i <= 2 ? 'bg-[var(--accent-purple)] text-white border-[var(--accent-purple)]' : i === 0 || done ? 'bg-white text-[var(--accent-purple)] border-[var(--accent-purple)]' : 'bg-gray-100 border-gray-200'}`}>
+            {s}
+          </span>
+        ))}
+        <span className="ml-auto font-display text-base text-[var(--text-secondary)]">{done ? 'Complete' : 'In Progress'}</span>
+      </div>
+
+      {/* Step 1 — Upload */}
+      <StickyCard color="yellow" className="!p-8 text-center border-dashed-4"
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        {!file ? (
+          <>
+            <Upload size={52} className="mx-auto mb-4 text-[var(--text-muted)] opacity-40" />
+            <h3 className="font-display text-2xl text-[var(--text-primary)] mb-1">Drop your CSV here 📎</h3>
+            <p className="font-ui text-sm text-[var(--text-secondary)] mb-4">Accepts .csv, .xlsx · Max 5MB</p>
+            <label className="cursor-pointer inline-block">
+              <span className="font-ui text-sm font-bold text-[var(--accent-purple)] underline">Browse Files</span>
+              <input type="file" accept=".csv,.xlsx" onChange={handleFile} className="hidden" />
+            </label>
+          </>
+        ) : (
+          <div className="flex items-center gap-4 justify-center">
+            <FileText size={32} className="text-[var(--accent-purple)]" />
+            <div className="text-left">
+              <p className="font-ui text-sm font-bold text-[var(--text-primary)]">{file.name}</p>
+              <p className="font-ui text-xs text-[var(--text-muted)]">{(file.size / 1024).toFixed(1)} KB</p>
+            </div>
+            <button onClick={() => setFile(null)} className="w-8 h-8 rounded-full bg-white border border-[var(--border-card)] flex items-center justify-center font-ui text-xs text-red-400">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Class selector */}
+        <div className="mt-5 flex flex-wrap gap-3 items-center justify-center">
+          <select value={classId} onChange={e => setClassId(e.target.value)} className="bg-white border-2 border-[var(--border-doodle)] rounded-xl px-4 py-2 font-ui text-sm outline-none min-w-[200px]">
+            <option value="">Select Class…</option>
+            <option value="c1">Fullstack - Sec B</option>
+            <option value="c2">DBMS - Sec A</option>
+            <option value="c3">DS Algorithms</option>
+          </select>
+          {(['marks','attendance','both'] as const).map(d => (
+            <button key={d} onClick={() => setDataType(d)}
+              className={`px-3 py-1.5 rounded-xl font-ui text-xs font-bold border-2 uppercase ${dataType === d ? 'bg-[var(--accent-purple)] text-white border-[var(--accent-purple)]' : 'bg-white text-[var(--text-secondary)] border-[var(--border-card)]'}`}>
+              {d}
+            </button>
+          ))}
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-         {}
-         <div className="lg:col-span-4 space-y-8">
-            <PaperSheet title="IMPORT CONFIG">
-               <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">TARGET CLASS</label>
-                    <select 
-                      value={classId}
-                      onChange={(e) => setClassId(e.target.value)}
-                      className="w-full bg-gray-50 border-2 border-transparent border-b-gray-200 py-3 px-4 focus:border-b-purple-500 outline-none font-bold text-gray-700 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="">Select a Class...</option>
-                      {classList.map((c) => (
-                        <option key={c._id} value={c._id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
+        {file && classId && (
+          <div className="mt-5">
+            <ComicButton variant="primary" onClick={handleUpload} loading={uploading} icon={<Zap size={16} />}>
+              Start Analysis → Analyze {file.name}
+            </ComicButton>
+          </div>
+        )}
+      </StickyCard>
 
-                  <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <FileText size={12} /> FORMAT REQUIREMENTS
-                     </p>
-                     <p className="text-xs font-bold text-blue-900/60 leading-relaxed">
-                        Ensure your CSV contains: studentId, subject, ut1, midSem, ut2, endSem, attended, totalClasses.
-                     </p>
-                  </div>
-               </div>
-            </PaperSheet>
+      {/* Step 2 — Live Pipeline */}
+      {uploading || pipe.some(s => s.status !== 'waiting') ? (
+        <StickyCard color="yellow" className="!p-6 space-y-3">
+          <h3 className="font-display text-xl mb-3 flex items-center gap-2">
+            <BrainCircuit size={18} /> Live Pipeline
+          </h3>
+          {pipe.map((st, i) => (
+            <motion.div key={st.label}
+              animate={st.status === 'done' ? { scale: [1, 1.02, 1] } : {}}
+              className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                st.status === 'done'     ? 'bg-[var(--sticky-green)] border-green-400' :
+                st.status === 'running'  ? 'bg-white border-amber-400 animate-pulse' :
+                'bg-gray-50 border-[var(--border-card)] opacity-60'
+              }`}
+            >
+              <span className="text-xl">{st.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-ui text-xs font-bold">{st.label}</p>
+                {st.count && <p className="font-ui text-[11px] text-[var(--text-muted)]">{st.count}</p>}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-28 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <motion.div className="h-full rounded-full" animate={{ width: `${st.pct}%` }}
+                    style={{ background: st.status === 'done' ? 'var(--accent-green)' : st.status === 'running' ? 'var(--accent-gold)' : '#E5E0D8' }} />
+                </div>
+                {st.status === 'done' && <CheckCircle size={16} className="text-green-600" />}
+                {st.status === 'running' && (
+                  <motion.div className="w-4 h-4 border-2 border-[var(--accent-gold)] border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </StickyCard>
+      ) : null}
 
-            <StickyNote color="blue" className="!p-8">
-               <h4 className="text-white font-black uppercase tracking-widest text-xs mb-4">Internal Memo</h4>
-               <p className="text-white/80 text-sm font-bold leading-relaxed">
-                  "Uploading bulk data automatically triggers the AI behavioral analysis pipeline for the selected class."
-               </p>
-            </StickyNote>
-         </div>
-
-         {}
-         <div className="lg:col-span-8 space-y-8">
-            <PaperSheet title="UPLOAD DESK" className="!p-0 overflow-hidden">
-               <div
-                 className={`p-12 text-center transition-all cursor-pointer border-b-2 border-dashed border-gray-100 ${
-                   dragging ? 'bg-purple-50' : 'bg-white'
-                 }`}
-                 onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                 onDragLeave={() => setDragging(false)}
-                 onDrop={(e) => {
-                   e.preventDefault();
-                   setDragging(false);
-                   handleFile(e.dataTransfer.files?.[0] || null);
-                 }}
-                 onClick={() => inputRef.current?.click()}
-               >
-                 <input
-                   ref={inputRef}
-                   type="file"
-                   accept=".csv"
-                   className="hidden"
-                   onChange={(e) => handleFile(e.target.files?.[0] || null)}
-                 />
-
-                 <AnimatePresence mode="wait">
-                   {file ? (
-                     <motion.div key="file" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4">
-                        <div className="w-20 h-20 bg-green-50 rounded-[32px] flex items-center justify-center text-green-500 mx-auto border-2 border-green-100 shadow-sm">
-                           <FileText size={40} />
-                        </div>
-                        <div>
-                           <p className="text-xl font-black text-gray-800">{file.name}</p>
-                           <p className="text-sm font-bold text-gray-400 mt-1">{(file.size / 1024).toFixed(1)} KB · READY FOR PROCESSING</p>
-                        </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                          className="text-[10px] font-black text-red-400 uppercase tracking-widest hover:text-red-500"
-                        >
-                           REMOVE FILE
-                        </button>
-                     </motion.div>
-                   ) : (
-                     <motion.div key="empty" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 py-8">
-                        <div className="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center text-gray-200 mx-auto border-2 border-gray-100 border-dashed">
-                           <Upload size={40} />
-                        </div>
-                        <div>
-                           <p className="text-2xl font-black text-gray-300">Drop Records Here</p>
-                           <p className="handwriting text-xl text-gray-400 mt-2">or click to browse your local files</p>
-                        </div>
-                     </motion.div>
-                   )}
-                 </AnimatePresence>
-               </div>
-
-               <div className="p-8 bg-gray-50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                     <div className={`w-3 h-3 rounded-full ${file ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
-                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        {file ? 'FILE VALIDATED' : 'WAITING FOR INPUT'}
-                     </span>
-                  </div>
-                  <button 
-                    onClick={handleUpload}
-                    disabled={uploading || !file || !classId}
-                    className="px-10 py-4 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-30 flex items-center gap-3"
-                  >
-                    {uploading ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} />}
-                    {uploading ? 'PROCESSING...' : 'PROCESS RECORDS'}
-                  </button>
-               </div>
-            </PaperSheet>
-
-            <AnimatePresence>
-              {result && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                >
-                   <PaperSheet title="PROCESSING REPORT">
-                      <div className="grid grid-cols-2 gap-8">
-                         <div className="p-8 bg-green-50 rounded-[32px] border border-green-100 text-center">
-                            <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">SUCCESSFUL</span>
-                            <p className="text-5xl font-black text-green-700 mt-2">{(result.processed as number) || 0}</p>
-                         </div>
-                         <div className="p-8 bg-red-50 rounded-[32px] border border-red-100 text-center">
-                            <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">ERRORS</span>
-                            <p className="text-5xl font-black text-red-700 mt-2">{(result.errors as number) || 0}</p>
-                         </div>
-                      </div>
-                   </PaperSheet>
-                </motion.div>
-              )}
-            </AnimatePresence>
-         </div>
-      </div>
+      {/* Step 3 — Results */}
+      {done && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <StickyCard color="green" pinned>
+            <div className="flex items-center gap-3 mb-4">
+              <Sparkles size={26} className="text-green-700" />
+              <div>
+                <p className="font-display text-2xl text-green-800">All Done!</p>
+                <p className="font-handwrite text-lg text-green-700">145 students processed successfully</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              {[{ label: 'Critical', value: 3, color: 'text-red-600' as const, bg: 'bg-red-50' },
+                { label: 'High', value: 12, color: 'text-orange-600', bg: 'bg-orange-50' },
+                { label: 'Medium', value: 24, color: 'text-yellow-700', bg: 'bg-yellow-50' },
+                { label: 'Low', value: 106, color: 'text-green-700', bg: 'bg-green-50' },
+              ].map(s => (
+                <div key={s.label} className={`text-center rounded-xl p-3 ${s.bg}`}>
+                  <p className={`font-display text-2xl ${s.color}`}>{s.value}</p>
+                  <p className="font-ui text-[10px] font-bold text-[var(--text-secondary)] uppercase">{s.label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="font-ui text-xs text-green-700 font-bold mb-4">
+              <Zap size={12} className="inline text-yellow-500" /> 3 students auto-flagged — interventions sent
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              <ComicButton variant="primary" onClick={() => router.push('/teacher/students?filter=at_risk')}>View At-Risk Students</ComicButton>
+              <ComicButton variant="secondary">Download Report</ComicButton>
+              <ComicButton variant="ghost" onClick={() => router.push('/teacher')}>Back to Dashboard</ComicButton>
+            </div>
+          </StickyCard>
+        </motion.div>
+      )}
     </div>
   );
 }

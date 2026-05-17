@@ -75,11 +75,29 @@ export default function UniversityHall() {
             <boxGeometry args={[1.1, 0.1, 0.9]} />
             <meshStandardMaterial color="#3E2723" />
           </mesh>
-          {}
-          <mesh position={[0, 0.8, 0.36]}>
-            <cylinderGeometry args={[0.2, 0.2, 0.05, 32]} rotation={[Math.PI / 2, 0, 0]} />
-            <meshStandardMaterial color="#FFD700" metalness={0.8} />
-          </mesh>
+           {}
+           <mesh position={[0, 0.8, 0.36]} rotation={[Math.PI / 2, 0, 0]}>
+             <cylinderGeometry args={[0.2, 0.2, 0.05, 32]} />
+             <meshStandardMaterial color="#FFD700" metalness={0.8} />
+           </mesh>
+         </RigidBody>
+       </group>
+
+       <group position={[2, 0, 1]}>
+         <RigidBody type="fixed">
+           <mesh position={[0, 0.6, 0]} castShadow>
+             <boxGeometry args={[0.9, 1.2, 0.7]} />
+             <meshStandardMaterial color="#5D4037" roughness={0.4} />
+           </mesh>
+           <mesh position={[0, 1.25, 0]} rotation={[0.2, 0, 0]}>
+             <boxGeometry args={[1.1, 0.1, 0.9]} />
+             <meshStandardMaterial color="#3E2723" />
+           </mesh>
+           {}
+           <mesh position={[0, 0.8, 0.36]} rotation={[Math.PI / 2, 0, 0]}>
+             <cylinderGeometry args={[0.2, 0.2, 0.05, 32]} />
+             <meshStandardMaterial color="#FFD700" metalness={0.8} />
+           </mesh>
         </RigidBody>
       </group>
 
@@ -93,24 +111,12 @@ export default function UniversityHall() {
             <boxGeometry args={[1.1, 0.1, 0.9]} />
             <meshStandardMaterial color="#3E2723" />
           </mesh>
-          <mesh position={[0, 0.8, 0.36]}>
-            <cylinderGeometry args={[0.2, 0.2, 0.05, 32]} rotation={[Math.PI / 2, 0, 0]} />
+          <mesh position={[0, 0.8, 0.36]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.2, 0.2, 0.05, 32]} />
             <meshStandardMaterial color="#FFD700" metalness={0.8} />
           </mesh>
         </RigidBody>
       </group>
-
-      {}
-      {[[-4, 8, 2], [4, 8, 2], [0, 8, 0]].map((pos, i) => (
-        <group key={i} position={pos as [number, number, number]}>
-          <pointLight intensity={10} distance={15} color="#FFF4E0" />
-          <mesh>
-            <sphereGeometry args={[0.3, 16, 16]} />
-            <meshStandardMaterial emissive="#FFF4E0" emissiveIntensity={2} color="#FFFFFF" />
-          </mesh>
-        </group>
-      ))}
-
     </group>
   );
 }

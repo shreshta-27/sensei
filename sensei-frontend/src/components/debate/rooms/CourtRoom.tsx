@@ -31,8 +31,8 @@ export default function CourtRoom() {
         <planeGeometry args={[30, 10]} />
         <meshStandardMaterial color="#263238" />
       </mesh>
-      <mesh position={[0, 4, -5.9]}>
-        <cylinderGeometry args={[0.8, 0.8, 0.1, 32]} rotation={[Math.PI / 2, 0, 0]} />
+      <mesh position={[0, 4, -5.9]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.8, 0.8, 0.1, 32]} />
         <meshStandardMaterial color="#FFD700" metalness={0.8} roughness={0.2} />
       </mesh>
 
