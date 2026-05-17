@@ -1342,3 +1342,12 @@ body {
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ── Animated Grid Background ── */
+@keyframes grid-move {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 30px; }
+}
+.animated-grid {
+  animation: grid-move 20s linear infinite;
+}

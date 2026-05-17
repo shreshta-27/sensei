@@ -222,18 +222,23 @@ function AnimatedBuilding() {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-export default function LandingPage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled]     = useState(false);
-  const { scrollYProgress } = useScroll();
-  const progressScaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
+const fadeUp = { hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: CUBIC_BEZIER } } };
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } };
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  const features = [
+    { color: NOTE_PINK,     icon: Zap,       iconColor: '#C62828', title: 'Early Risk Detection',  desc: 'AI predicts issues before they become problems.' },
+    { color: NOTE_YELLOW,   icon: Target,    iconColor: '#E65100', title: 'Smart Interventions',   desc: 'Automated, personalized actions at the right time.' },
+    { color: NOTE_GREEN,    icon: BarChart3, iconColor: '#2E7D32', title: 'Real-time Insights',    desc: 'Live analytics for every decision you make.' },
+    { color: NOTE_BLUE,     icon: Users,     iconColor: '#0277BD', title: 'Student Success',       desc: 'Better outcomes through data-driven care.' },
+    { color: NOTE_LAVENDER, icon: Shield,    iconColor: '#6A1B9A', title: 'Unified Ecosystem',     desc: 'All systems. One platform. Infinite impact.' },
+  ];
+
+  const roleCards = [
+    { icon: GraduationCap, color: PURPLE,    bg: '#F0E8FF', title: 'For Students', desc: 'An AI that adapts to how you think and grows with you.', features: ['Adaptive AI Assessments', 'Focus Guardian', 'Career Simulator', 'Vision Summarizer', '24/7 AI Study Tutor', 'Progress Analytics'] },
+    { icon: BookOpen,      color: '#0097A7', bg: '#E0F7FA', title: 'For Faculty',  desc: 'Intelligent tools that save time so you focus on students.', features: ['AI-Powered Grading', 'Class Analytics', 'Intervention Alerts', 'Smart Assignment Builder', 'Resource Planner', 'Poll & Quiz Creator'] },
+    { icon: Shield,        color: '#2E7D32', bg: '#E8F5E9', title: 'For Admins',   desc: 'System-wide analytics and AI-powered risk insights.', features: ['University Dashboard', 'Dropout Risk Prediction', 'Performance Analytics', 'Intervention Management', 'Department Reports'] },
+  ];
+
 
   const navLinks = ['Home', 'Features', 'Solutions', 'About Us', 'Pricing', 'Contact'];
 
@@ -257,24 +262,24 @@ export default function LandingPage() {
     { icon: Shield,        iconColor: '#388E3C', accentColor: NOTE_GREEN,    title: 'ADMIN COMMAND CENTER',  tagline: 'Decide faster. Lead better. 👑', stats: [{ label: 'Total Students', value: '9,842' }, { label: 'System Health', value: '92%' }, { label: 'Active Alerts', value: '23' }] },
   ];
 
-  const features = [
-    { color: NOTE_PINK,     icon: Zap,       iconColor: '#C62828', title: 'Early Risk Detection',  desc: 'AI predicts issues before they become problems.' },
-    { color: NOTE_YELLOW,   icon: Target,    iconColor: '#E65100', title: 'Smart Interventions',   desc: 'Automated, personalized actions at the right time.' },
-    { color: NOTE_GREEN,    icon: BarChart3, iconColor: '#2E7D32', title: 'Real-time Insights',    desc: 'Live analytics for every decision you make.' },
-    { color: NOTE_BLUE,     icon: Users,     iconColor: '#0277BD', title: 'Student Success',       desc: 'Better outcomes through data-driven care.' },
-    { color: NOTE_LAVENDER, icon: Shield,    iconColor: '#6A1B9A', title: 'Unified Ecosystem',     desc: 'All systems. One platform. Infinite impact.' },
-  ];
 
-  const roleCards = [
-    { icon: GraduationCap, color: PURPLE,    bg: '#F0E8FF', title: 'For Students', desc: 'An AI that adapts to how you think and grows with you.', features: ['Adaptive AI Assessments', 'Focus Guardian', 'Career Simulator', 'Vision Summarizer', '24/7 AI Study Tutor', 'Progress Analytics'] },
-    { icon: BookOpen,      color: '#0097A7', bg: '#E0F7FA', title: 'For Faculty',  desc: 'Intelligent tools that save time so you focus on students.', features: ['AI-Powered Grading', 'Class Analytics', 'Intervention Alerts', 'Smart Assignment Builder', 'Resource Planner', 'Poll & Quiz Creator'] },
-    { icon: Shield,        color: '#2E7D32', bg: '#E8F5E9', title: 'For Admins',   desc: 'System-wide analytics and AI-powered risk insights.', features: ['University Dashboard', 'Dropout Risk Prediction', 'Performance Analytics', 'Intervention Management', 'Department Reports'] },
-  ];
+export default function LandingPage() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
+  const { scrollYProgress } = useScroll();
+  const progressScaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
-  const fadeUp = { hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: CUBIC_BEZIER } } };
-  const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } };
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+
+
 
   return (
+    <>
     <div style={{ background: CREAM, color: NAVY, overflowX: 'hidden', fontFamily: "'Raleway', sans-serif" }}>
       {/* scroll progress bar */}
       <motion.div style={{ scaleX: progressScaleX, transformOrigin: '0%', position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${PURPLE},#EC407A,#4CAF50)`, zIndex: 2000 }} />
@@ -355,21 +360,23 @@ export default function LandingPage() {
         position: 'relative',
         overflow: 'hidden',
         background: '#F5EFE8',
+        backgroundImage: 'linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)',
+        backgroundSize: '30px 30px',
         zIndex: 0,
       }}>
         <ParticleBackground />
         {/* polka dot texture */}
-        <div style={{
+        <div className="animated-grid" style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(circle, rgba(123,79,233,0.09) 1.2px, transparent 1.2px)',
-          backgroundSize: '26px 26px',
+          backgroundImage: 'linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)',
+          backgroundSize: '30px 30px',
         }} />
         {/* soft ambient blobs */}
         <div style={{ position: 'absolute', top: '8%', left: '-5%', width: 360, height: 360, background: 'rgba(212,184,255,0.25)', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '10%', right: '-5%', width: 300, height: 300, background: 'rgba(181,234,215,0.3)', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none' }} />
 
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '4.5rem 1.5rem', width: '100%' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '4rem', alignItems: 'center' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '4.5rem 1.5rem', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '2rem', alignItems: 'center' }}>
 
             {/* LEFT: text */}
             <motion.div initial="hidden" animate="visible" variants={stagger}>
@@ -389,10 +396,6 @@ export default function LandingPage() {
                   <motion.span initial={{ opacity: 0, scale: 0.5, rotate: -8 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ duration: 0.7, delay: 0.3, ease: CUBIC_BEZIER }}
                     style={{ display: 'inline-block', position: 'relative', color: PURPLE, fontStyle: 'italic', marginRight: '0.15em' }}>
                     AI
-                    <motion.svg viewBox="0 0 52 34" style={{ position: 'absolute', left: -10, top: -8, width: 'calc(100% + 20px)', height: 'calc(100% + 18px)', overflow: 'visible' }} fill="none">
-                      <motion.ellipse cx="26" cy="17" rx="24" ry="15" stroke={PURPLE} strokeWidth="2.5"
-                        initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 1.2, delay: 0.8 }} />
-                    </motion.svg>
                   </motion.span>{' '}
                   <motion.span initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.45, ease: CUBIC_BEZIER }}
                     style={{ display: 'inline-block' }}>Operating</motion.span>
@@ -470,67 +473,11 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* RIGHT: hero illustration + floating notes */}
-            <div className="hidden lg:block" style={{ position: 'relative', height: 600 }}>
-              {/* central campus card - DEAD CENTER */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 1, ease: CUBIC_BEZIER }}
-                style={{ position: 'absolute', top: '46%', left: '44%', transform: 'translate(-50%, -50%)', zIndex: 5 }}
-              >
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
-                  <div style={{ position: 'relative', width: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 360 }}>
-                    {/* Space twinkling dots */}
-                    {[...Array(12)].map((_, i) => (
-                      <motion.div key={i}
-                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
-                        transition={{ duration: 1.6 + i * 0.38, repeat: Infinity, delay: i * 0.25, ease: 'easeInOut' }}
-                        style={{ position: 'absolute', top: `${6 + (i * 13) % 88}%`, left: `${3 + (i * 17) % 92}%`, width: i % 3 === 0 ? 5 : 3, height: i % 3 === 0 ? 5 : 3, background: [PURPLE, NOTE_YELLOW, NOTE_GREEN, '#81D4FA', '#FFD700', '#FF9CDA'][i % 6], borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}
-                      />
-                    ))}
-                    {/* Orbital rings */}
-                    {[58, 90, 124].map((r, i) => (
-                      <motion.div key={r}
-                        animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
-                        transition={{ duration: 11 + i * 6, repeat: Infinity, ease: 'linear' }}
-                        style={{ position: 'absolute', top: 8, left: '50%', width: r * 2, height: r * 2, borderRadius: '50%', border: `1.5px dashed rgba(123,79,233,${0.3 - i * 0.08})`, transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }}
-                      >
-                        <div style={{ position: 'absolute', top: 0, left: '50%', width: 8, height: 8, borderRadius: '50%', background: i === 0 ? PURPLE : i === 1 ? NOTE_YELLOW : NOTE_GREEN, transform: 'translate(-50%, -50%)', boxShadow: `0 0 10px ${i === 0 ? PURPLE : i === 1 ? NOTE_YELLOW : NOTE_GREEN}` }} />
-                      </motion.div>
-                    ))}
-                    {/* Pulsing glow behind brain */}
-                    <motion.div animate={{ scale: [1, 1.45, 1], opacity: [0.2, 0.55, 0.2] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', width: 180, height: 180, background: 'radial-gradient(circle, rgba(123,79,233,0.38), transparent 65%)', borderRadius: '50%', filter: 'blur(24px)', pointerEvents: 'none', zIndex: 0 }} />
-                    {/* Brain orb - larger, standalone */}
-                    <motion.div
-                      animate={{ scale: [1, 1.12, 1], boxShadow: ['0 0 40px rgba(123,79,233,0.8), 0 0 80px rgba(123,79,233,0.35)', '0 0 70px rgba(123,79,233,1.0), 0 0 140px rgba(123,79,233,0.6)', '0 0 40px rgba(123,79,233,0.8), 0 0 80px rgba(123,79,233,0.35)'] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{ width: 114, height: 114, background: `radial-gradient(circle at 35% 35%, #B8A0FF, ${PURPLE}, ${PURPLE_DARK})`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5, position: 'relative', flexShrink: 0, marginTop: 10 }}>
-                      <Brain size={54} color="#fff" />
-                    </motion.div>
-                    {/* Animated Building */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.8 }}
-                      style={{ marginTop: -14, zIndex: 4, position: 'relative' }}>
-                      <AnimatedBuilding />
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </motion.div>
-
-              {/* ── Floating sticky notes - RING around center ── */}
-              <FloatingLabel label="STUDENTS"     color={NOTE_LAVENDER} Icon={GraduationCap} posStyle={{ top: '2%',    left: '18%' }} rotate={-5} delay={0.2} />
-              <FloatingLabel label="FACULTY"      color={NOTE_YELLOW}   Icon={BookOpen}     posStyle={{ top: '2%',    right: '18%'}} rotate={6}  delay={0.35} />
-              <FloatingLabel label="AI POWERED"   color={NOTE_GREEN}    Icon={Brain}        posStyle={{ top: '35%',   right: '-3%'}} rotate={-3} delay={0.5} />
-              <FloatingLabel label="ANALYTICS"    color={NOTE_YELLOW}   Icon={BarChart3}    posStyle={{ top: '35%',   left: '-3%' }} rotate={4}  delay={0.28} />
-              <FloatingLabel label="WELLNESS"     color={NOTE_BLUE}     Icon={Heart}        posStyle={{ bottom: '18%',left: '10%' }} rotate={-6} delay={0.44} />
-              <FloatingLabel label="ADMIN"        color={NOTE_GREEN}    Icon={Building2}    posStyle={{ bottom: '18%',right: '10%'}} rotate={5}  delay={0.6} />
-              <FloatingLabel label="INTERVENTIONS"color={NOTE_PINK}     Icon={Target}       posStyle={{ bottom: '2%', left: '35%' }} rotate={-4} delay={0.72} />
-
-              {/* decorative stars */}
-              <DoodleStar style={{ top: '18%', left: '44%', color: PURPLE, opacity: 0.6, fontSize: '1.3rem' }} />
-              <DoodleStar style={{ bottom: '32%', left: '16%', color: '#4CAF50', opacity: 0.55, fontSize: '1.1rem' }} />
-              <DoodleStar style={{ top: '50%', right: '6%', color: '#F57F17', opacity: 0.65, fontSize: '0.95rem' }} />
-              <DoodleStar style={{ bottom: '8%', right: '32%', color: PURPLE, opacity: 0.4, fontSize: '0.85rem' }} />
+            {/* RIGHT: hero illustration — Image */}
+            <div className="hidden lg:block" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
+              <img src="/images/hero-bg.png" alt="Sensei Campus Illustration" style={{ width: '115%', maxWidth: 720, height: 'auto', objectFit: 'contain', marginLeft: '-2rem', filter: 'drop-shadow(0 8px 32px rgba(123,79,233,0.15))' }} />
             </div>
+
           </div>
         </div>
 
@@ -947,5 +894,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
