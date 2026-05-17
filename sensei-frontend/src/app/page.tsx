@@ -118,6 +118,7 @@ function FloatingLabel({ label, color, Icon, posStyle, delay = 0, rotate = 0 }: 
     >
       <motion.div
         animate={{ y: [0, -7, 0] }}
+        whileHover={{ scale: 1.12, y: -5 }}
         transition={{ duration: 3 + delay * 0.5, repeat: Infinity, ease: 'easeInOut', delay: delay * 0.4 }}
       >
         <StickyNote color={color} rotate={rotate} style={{ width: 118, padding: '0.9rem 0.75rem' }}>
@@ -143,6 +144,81 @@ function DoodleStar({ style }: { style?: React.CSSProperties }) {
       transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       style={{ position: 'absolute', fontSize: '1rem', pointerEvents: 'none', userSelect: 'none', ...style }}
     >✦</motion.span>
+  );
+}
+
+// ─── AnimatedBuilding ────────────────────────────────────────────────────────
+function AnimatedBuilding() {
+  const winRows = [
+    [1,0,1,1,0,1],[0,1,1,0,1,0],[1,1,0,1,0,1],[0,1,1,0,1,1],[1,0,1,1,0,0],
+  ];
+  return (
+    <motion.div
+      animate={{ y: [0, -8, 0] }}
+      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+      style={{ position: 'relative', width: 310, height: 230 }}
+    >
+      {/* Ground glow */}
+      <motion.div
+        animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.18, 1] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ position: 'absolute', bottom: 5, left: '50%', transform: 'translateX(-50%)', width: 230, height: 22, background: 'radial-gradient(ellipse, rgba(123,79,233,0.55), transparent 70%)', filter: 'blur(10px)' }}
+      />
+      <svg viewBox="0 0 310 230" fill="none" style={{ width: '100%', height: '100%' }}>
+        <defs>
+          <linearGradient id="bL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#1A1040"/><stop offset="100%" stopColor="#2D1B69"/></linearGradient>
+          <linearGradient id="bR" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#231550"/><stop offset="100%" stopColor="#160D35"/></linearGradient>
+          <linearGradient id="bT" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#3D2480"/><stop offset="100%" stopColor="#6040C0"/></linearGradient>
+          <filter id="winGlow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        {/* Ground ellipse */}
+        <ellipse cx="155" cy="222" rx="120" ry="10" fill="rgba(123,79,233,0.14)" />
+        {/* Main building faces */}
+        <polygon points="55,92 155,52 155,205 55,228" fill="url(#bL)" />
+        <polygon points="155,52 255,92 255,228 155,205" fill="url(#bR)" />
+        <polygon points="55,92 155,52 255,92 155,132" fill="url(#bT)" />
+        {/* Left face windows */}
+        {winRows.map((row, ri) => row.slice(0,3).map((lit, wi) => (
+          <rect key={`l${ri}${wi}`} x={68+wi*25+ri*2} y={110+ri*19} width={13} height={11} rx={2}
+            fill={lit ? '#A78BFA' : '#3D2080'} opacity={lit ? 0.92 : 0.35}
+            filter={lit ? 'url(#winGlow)' : undefined} />
+        )))}
+        {/* Right face windows */}
+        {winRows.map((row, ri) => row.slice(0,4).map((lit, wi) => (
+          <rect key={`r${ri}${wi}`} x={165+wi*20-ri*2} y={110+ri*19} width={13} height={11} rx={2}
+            fill={lit ? '#C4B5FD' : '#2A1B56'} opacity={lit ? 0.82 : 0.3}
+            filter={lit ? 'url(#winGlow)' : undefined} />
+        )))}
+        {/* Entrance arch */}
+        <rect x={140} y={193} width={30} height={18} rx={3} fill="#0D0820" />
+        <path d="M140,197 Q155,183 170,197" fill="#A78BFA" opacity="0.25" />
+        {/* Roof details */}
+        <rect x={142} y={45} width={26} height={9} rx={2} fill="#3D2480" />
+        <rect x={150} y={37} width={10} height={9} rx={2} fill="#5A35B0" />
+        <line x1="155" y1="36" x2="155" y2="16" stroke="rgba(123,79,233,0.7)" strokeWidth="2" />
+        <circle cx="155" cy="13" r="4" fill="#A78BFA" opacity="0.9" />
+        {/* Side wings */}
+        <polygon points="37,130 55,118 55,200 37,212" fill="#170E32" />
+        <polygon points="255,118 273,130 273,212 255,200" fill="#170E32" />
+        {[0,1,2].map(i => (
+          <rect key={`wl${i}`} x={40} y={133+i*21} width={9} height={9} rx={1} fill="#7B4FE9" opacity="0.65" />
+        ))}
+        {[0,1,2].map(i => (
+          <rect key={`wr${i}`} x={258} y={133+i*21} width={9} height={9} rx={1} fill="#7B4FE9" opacity="0.65" />
+        ))}
+        {/* Trees left */}
+        <ellipse cx="28" cy="215" rx="18" ry="11" fill="#2E7D32" opacity="0.85" />
+        <ellipse cx="28" cy="208" rx="13" ry="10" fill="#43A047" opacity="0.9" />
+        <rect x="25" y="218" width="5" height="8" rx="1" fill="#4E342E" />
+        {/* Trees right */}
+        <ellipse cx="280" cy="215" rx="18" ry="11" fill="#2E7D32" opacity="0.85" />
+        <ellipse cx="280" cy="208" rx="13" ry="10" fill="#43A047" opacity="0.9" />
+        <rect x="277" y="218" width="5" height="8" rx="1" fill="#4E342E" />
+        {/* Connecting arcs (power lines) */}
+        <path d="M55,130 Q105,115 155,120" fill="none" stroke="rgba(123,79,233,0.2)" strokeWidth="1" strokeDasharray="4 3" />
+        <path d="M155,120 Q205,115 255,130" fill="none" stroke="rgba(123,79,233,0.2)" strokeWidth="1" strokeDasharray="4 3" />
+      </svg>
+    </motion.div>
   );
 }
 
@@ -402,24 +478,39 @@ export default function LandingPage() {
                 style={{ position: 'absolute', top: '46%', left: '44%', transform: 'translate(-50%, -50%)', zIndex: 5 }}
               >
                 <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
-                  <div style={{ position: 'relative', width: 360, height: 360 }}>
-                    {/* pulsing glow */}
-                    <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{ position: 'absolute', inset: -35, background: 'radial-gradient(circle, rgba(123,79,233,0.2), transparent 65%)', borderRadius: '50%', pointerEvents: 'none' }} />
-                    {/* brain orb */}
-                    <motion.div animate={{ scale: [1, 1.15, 1], boxShadow: ['0 0 30px rgba(123,79,233,0.7), 0 0 60px rgba(123,79,233,0.3)', '0 0 55px rgba(123,79,233,0.95), 0 0 100px rgba(123,79,233,0.45)', '0 0 30px rgba(123,79,233,0.7), 0 0 60px rgba(123,79,233,0.3)'] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{ position: 'absolute', top: -48, left: '50%', transform: 'translateX(-50%)', width: 88, height: 88, background: `radial-gradient(circle, ${PURPLE}, ${PURPLE_DARK})`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                      <Brain size={42} color="#fff" />
+                  <div style={{ position: 'relative', width: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 360 }}>
+                    {/* Space twinkling dots */}
+                    {[...Array(12)].map((_, i) => (
+                      <motion.div key={i}
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
+                        transition={{ duration: 1.6 + i * 0.38, repeat: Infinity, delay: i * 0.25, ease: 'easeInOut' }}
+                        style={{ position: 'absolute', top: `${6 + (i * 13) % 88}%`, left: `${3 + (i * 17) % 92}%`, width: i % 3 === 0 ? 5 : 3, height: i % 3 === 0 ? 5 : 3, background: [PURPLE, NOTE_YELLOW, NOTE_GREEN, '#81D4FA', '#FFD700', '#FF9CDA'][i % 6], borderRadius: '50%', pointerEvents: 'none', zIndex: 0 }}
+                      />
+                    ))}
+                    {/* Orbital rings */}
+                    {[58, 90, 124].map((r, i) => (
+                      <motion.div key={r}
+                        animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
+                        transition={{ duration: 11 + i * 6, repeat: Infinity, ease: 'linear' }}
+                        style={{ position: 'absolute', top: 8, left: '50%', width: r * 2, height: r * 2, borderRadius: '50%', border: `1.5px dashed rgba(123,79,233,${0.3 - i * 0.08})`, transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }}
+                      >
+                        <div style={{ position: 'absolute', top: 0, left: '50%', width: 8, height: 8, borderRadius: '50%', background: i === 0 ? PURPLE : i === 1 ? NOTE_YELLOW : NOTE_GREEN, transform: 'translate(-50%, -50%)', boxShadow: `0 0 10px ${i === 0 ? PURPLE : i === 1 ? NOTE_YELLOW : NOTE_GREEN}` }} />
+                      </motion.div>
+                    ))}
+                    {/* Pulsing glow behind brain */}
+                    <motion.div animate={{ scale: [1, 1.45, 1], opacity: [0.2, 0.55, 0.2] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', width: 180, height: 180, background: 'radial-gradient(circle, rgba(123,79,233,0.38), transparent 65%)', borderRadius: '50%', filter: 'blur(24px)', pointerEvents: 'none', zIndex: 0 }} />
+                    {/* Brain orb - larger, standalone */}
+                    <motion.div
+                      animate={{ scale: [1, 1.12, 1], boxShadow: ['0 0 40px rgba(123,79,233,0.8), 0 0 80px rgba(123,79,233,0.35)', '0 0 70px rgba(123,79,233,1.0), 0 0 140px rgba(123,79,233,0.6)', '0 0 40px rgba(123,79,233,0.8), 0 0 80px rgba(123,79,233,0.35)'] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{ width: 114, height: 114, background: `radial-gradient(circle at 35% 35%, #B8A0FF, ${PURPLE}, ${PURPLE_DARK})`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5, position: 'relative', flexShrink: 0, marginTop: 10 }}>
+                      <Brain size={54} color="#fff" />
                     </motion.div>
-                    {/* campus image */}
-                    <img src="https://images.unsplash.com/photo-1562774053-701939374585?auto=format&w=700&q=80" alt="University campus"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 26, border: '4px solid rgba(255,255,255,0.95)', boxShadow: '0 28px 70px rgba(123,79,233,0.28), 0 10px 28px rgba(0,0,0,0.12)' }} />
-                    <div style={{ position: 'absolute', inset: 0, borderRadius: 26, background: 'linear-gradient(to bottom, rgba(123,79,233,0.08) 0%, transparent 40%, rgba(26,26,46,0.12) 100%)', pointerEvents: 'none' }} />
-                    {/* SENSEI badge on image */}
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1, duration: 0.5 }}
-                      style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', background: 'rgba(26,26,46,0.85)', backdropFilter: 'blur(10px)', borderRadius: 12, padding: '0.55rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(123,79,233,0.3)' }}>
-                      <Brain size={14} color={PURPLE} />
-                      <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.15em', color: '#fff' }}>SENSEI AI</span>
+                    {/* Animated Building */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.8 }}
+                      style={{ marginTop: -14, zIndex: 4, position: 'relative' }}>
+                      <AnimatedBuilding />
                     </motion.div>
                   </div>
                 </motion.div>
@@ -453,14 +544,20 @@ export default function LandingPage() {
 
       {/* ── STATS STRIP ── */}
       <section id="section-features" style={{
-        background: '#FFFCF4',
-        borderTop: '2px dashed rgba(0,0,0,0.09)',
-        borderBottom: '2px dashed rgba(0,0,0,0.09)',
-        padding: '2.75rem 1.5rem',
+        background: '#FFFDF5',
+        padding: '0 1.5rem',
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
         zIndex: 0,
       }}>
+        {/* Torn paper top edge */}
+        <div style={{ position: 'absolute', top: -13, left: 0, right: 0, height: 14, pointerEvents: 'none', zIndex: 2 }}>
+          <svg viewBox="0 0 1440 14" preserveAspectRatio="none" style={{ width: '100%', height: 14, display: 'block' }}>
+            <path d="M0,14 L20,4 L40,12 L60,2 L80,10 L100,0 L120,8 L140,2 L160,12 L180,0 L200,10 L220,4 L240,14 L260,2 L280,12 L300,1 L320,11 L340,4 L360,13 L380,2 L400,10 L420,0 L440,9 L460,3 L480,13 L500,1 L520,10 L540,4 L560,14 L580,2 L600,11 L620,1 L640,10 L660,4 L680,13 L700,1 L720,10 L740,3 L760,12 L780,0 L800,10 L820,3 L840,13 L860,2 L880,11 L900,1 L920,10 L940,4 L960,14 L980,2 L1000,11 L1020,1 L1040,10 L1060,4 L1080,13 L1100,2 L1120,11 L1140,1 L1160,10 L1180,4 L1200,13 L1220,2 L1240,11 L1260,1 L1280,10 L1300,3 L1320,12 L1340,1 L1360,10 L1380,4 L1400,13 L1420,2 L1440,10 L1440,14 Z" fill="#FFFDF5" />
+          </svg>
+        </div>
+        {/* Inner padding wrapper */}
+        <div style={{ padding: '2.75rem 0', borderTop: '2px dashed rgba(0,0,0,0.08)', borderBottom: '2px dashed rgba(0,0,0,0.08)', position: 'relative' }}>
         <ParticleBackground />
         <span style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', fontSize: '1.5rem', opacity: 0.2, pointerEvents: 'none' }}>☆</span>
         <span style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem', opacity: 0.2, pointerEvents: 'none' }}>😊</span>
@@ -474,6 +571,7 @@ export default function LandingPage() {
             </motion.div>
           ))}
         </div>
+        </div>{/* close inner padding wrapper */}
       </section>
 
       {/* ── WHY CHOOSE SENSEI ── */}
@@ -501,7 +599,7 @@ export default function LandingPage() {
               { color: NOTE_GREEN, icon: '📊', title: 'Unified Analytics', desc: 'One dashboard for students, faculty, and admins — no more scattered data across systems.', points: ['Cross-role views', 'Live metrics'] },
               { color: NOTE_PINK, icon: '🎯', title: 'Proven Results', desc: '+23% average grade improvement and 95% early risk detection accuracy across campuses.', points: ['Data-backed', 'Measurable ROI'] },
             ].map(({ color, icon, title, desc, points }, idx) => (
-              <motion.div key={title} initial={{ opacity: 0, y: 30, rotate: idx % 2 === 0 ? -3 : 3 }} whileInView={{ opacity: 1, y: 0, rotate: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.12, duration: 0.6, type: 'spring', stiffness: 200 }} whileHover={{ y: -10, rotate: 0, scale: 1.03 }}>
+              <motion.div key={title} initial={{ opacity: 0, y: 30, rotate: idx % 2 === 0 ? -3 : 3 }} whileInView={{ opacity: 1, y: 0, rotate: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.12, duration: 0.6, type: 'spring', stiffness: 200 }} whileHover={{ y: -12, rotate: 0, scale: 1.08 }}>
                 <StickyNote color={color} rotate={idx === 0 ? -2 : idx === 1 ? 1.5 : idx === 2 ? -1 : 2} style={{ height: '100%', padding: '1.25rem' }}>
                   <span style={{ fontSize: '1.6rem', display: 'block', marginBottom: '0.5rem' }}>{icon}</span>
                   <h3 style={{ fontWeight: 900, fontSize: '0.95rem', marginBottom: '0.45rem', color: NAVY, lineHeight: 1.3 }}>{title}</h3>
@@ -702,7 +800,7 @@ export default function LandingPage() {
           <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
             {features.map(({ color, icon: Icon, iconColor, title, desc }, idx) => (
-              <motion.div key={title} variants={fadeUp} whileHover={{ y: -8, rotate: 0 }} style={{ transition: 'transform 0.3s' }}>
+              <motion.div key={title} variants={fadeUp} whileHover={{ y: -10, scale: 1.08, rotate: 0 }} style={{ transition: 'transform 0.3s' }}>
                 <StickyNote color={color} rotate={idx === 0 ? -2 : idx === 1 ? 1.5 : idx === 2 ? 0 : idx === 3 ? -1.5 : 2} style={{ height: '100%', padding: '1.4rem' }}>
                   <div style={{ width: 46, height: 46, background: 'rgba(0,0,0,0.08)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.875rem' }}>
                     <Icon size={22} color={iconColor} />
