@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const TeacherAIChatbot = dynamic(() => import('@/components/TeacherAIChatbot'), { ssr: false });
+const AdminAIChatbot = dynamic(() => import('@/components/AdminAIChatbot'), { ssr: false });
 
 const NAV_ITEMS = [
   { href: '/admin',                    label: 'Overview',      icon: LayoutDashboard },
@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           Pure icon rail with CSS tooltips on hover.
          ══════════════════════════════════════════════ */}
       <aside
-        className="hidden lg:flex fixed right-3 top-3 bottom-3 z-50 flex-col overflow-hidden adm-glass-panel"
+        className="hidden lg:flex fixed right-3 top-3 bottom-3 z-50 flex-col overflow-visible adm-glass-panel"
         style={{
           width: `${RAIL_W}px`,
           borderRadius: '22px',
@@ -77,15 +77,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         {/* ── Brand Logo ── */}
         <div
-          className="flex items-center justify-center pt-4 pb-3 flex-shrink-0"
-          style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
+          className="flex items-center justify-center pt-5 pb-2 flex-shrink-0"
         >
-          <div
-            className="w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-base shadow-md"
-            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)' }}
+          <span
+            className="text-[10px] font-black tracking-widest"
+            style={{
+              color: 'var(--adm-text)',
+              fontFamily: 'Space Grotesk, sans-serif',
+              transform: 'rotate(-90deg)',
+              marginBottom: '16px',
+              marginTop: '16px'
+            }}
           >
-            S
-          </div>
+            SENSEI
+          </span>
         </div>
 
         {/* ── User Profile ── */}
@@ -95,7 +100,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           <Link href="/admin/settings" className="adm-nav-tooltip-wrap">
             <div
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm text-sm transition-all duration-200 hover:ring-2 hover:ring-purple-400 hover:ring-offset-2 ${pathname === '/admin/settings' ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm text-sm transition-all duration-200 hover:ring-2 hover:ring-purple-400 hover:ring-offset-2 adm-nav-avatar ${pathname === '/admin/settings' ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
               style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #C084FC 100%)' }}
             >
               {user.name?.charAt(0).toUpperCase()}
@@ -105,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* ── Nav ── */}
-        <nav className="flex-1 overflow-y-auto adm-scrollbar py-3 px-2 space-y-0.5">
+        <nav className="flex-1 overflow-visible py-3 px-2 space-y-0.5">
           {NAV_ITEMS.map((n) => {
             const active = isActive(n.href);
             return (
@@ -134,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 )}
                 {/* Icon */}
                 <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center adm-nav-icon"
                   style={{ background: active ? 'rgba(124,58,237,0.15)' : 'transparent' }}
                 >
                   <n.icon
@@ -223,7 +228,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <TeacherAIChatbot />
+        <AdminAIChatbot />
       </main>
 
       {/* ══════════════════════════════════════════════

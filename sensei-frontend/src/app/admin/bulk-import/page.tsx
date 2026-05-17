@@ -40,6 +40,22 @@ export default function AdminBulkImportPage() {
         <p className="text-sm" style={{ color: 'var(--adm-text-muted)' }}>Upload a CSV file to register multiple users at once.</p>
       </motion.div>
 
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <div className="adm-card p-5 mb-2" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.1)' }}>
+          <h3 className="font-bold text-sm mb-2" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>CSV Format Requirements</h3>
+          <p className="text-xs mb-3" style={{ color: 'var(--adm-text-sub)' }}>
+            Your CSV file must include the following headers in the first row. The system will map columns based on exact header names.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {['name', 'email', 'password', 'role (student/teacher/admin)', 'department (optional)'].map(col => (
+              <span key={col} className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider" style={{ background: 'var(--adm-surface)', color: 'var(--adm-accent)', border: '1px solid rgba(124,58,237,0.1)' }}>
+                {col}
+              </span>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="adm-card p-10 text-center"
