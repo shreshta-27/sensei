@@ -185,13 +185,28 @@ const TrendIcon: Record<string, React.ReactNode> = {
 export default function AIInsightsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [effectivenessScore, setEffectivenessScore] = useState(87);
+  const [teachingRecs, setTeachingRecs] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
       try {
-        // Attempt real API — fall back to mock on error
-        await api.get('/teacher/ai-insights');
+        const [effRes, dashRes] = await Promise.all([
+          api.get('/api/teacher/effectiveness').catch(() => ({ data: null })),
+          api.get('/api/teacher/dashboard').catch(() => ({ data: null })),
+        ]);
+        if (!cancelled) {
+          if (effRes.data) {
+            setEffectivenessScore(effRes.data.effectivenessScore || 87);
+            if (effRes.data.recommendations?.length) {
+              setTeachingRecs(effRes.data.recommendations);
+            }
+          }
+          if (dashRes.data?.teachingRecommendations?.length) {
+            setTeachingRecs(dashRes.data.teachingRecommendations);
+          }
+        }
       } catch {
         // silently fall back to mock
       }
@@ -255,14 +270,14 @@ export default function AIInsightsPage() {
             <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start">
               {/* Gauge + tip */}
               <div className="flex flex-col items-center gap-5 min-w-[180px]">
-                <CircularGauge value={87} />
+                <CircularGauge value={effectivenessScore} />
                 <motion.p
                   className="font-ui text-center text-[var(--text-secondary)] text-sm leading-relaxed"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  Your effectiveness this week: <strong className="text-[var(--accent-green)]">87%</strong>
+                  Your effectiveness this week: <strong className="text-[var(--accent-green)]">{effectivenessScore}%</strong>
                 </motion.p>
                 <motion.div
                   className="w-full"
@@ -370,7 +385,7 @@ export default function AIInsightsPage() {
             Based on class performance
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {recommendations.map((rec, i) => (
+            {(teachingRecs.length > 0 ? teachingRecs.map((r, i) => ({ id: `r${i}`, text: r })) : recommendations).map((rec, i) => (
               <motion.div
                 key={rec.id}
                 initial={{ opacity: 0, scale: 0.95 }}

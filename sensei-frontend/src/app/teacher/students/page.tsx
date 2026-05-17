@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Upload, UserPlus, MessageCircle, Eye } from 'lucide-react';
+import { Search, Plus, Upload, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import StickyCard from '@/components/faculty/StickyCard';
@@ -13,6 +13,7 @@ import TeacherAvatar from '@/components/faculty/TeacherAvatar';
 
 interface Student {
   id: string;
+  _id?: string;
   name: string;
   dept: string;
   sem: number;
@@ -20,6 +21,8 @@ interface Student {
   attendance: number;
   riskLevel: 'high' | 'medium' | 'low' | 'improving';
   performanceNote: string;
+  email?: string;
+  studentId?: string;
 }
 
 type FilterType = 'all' | 'critical' | 'high' | 'medium' | 'low' | 'improving';
@@ -50,15 +53,28 @@ export default function StudentsPage() {
 
   useEffect(() => {
     fetchStudents();
-  }, [filter]);
+  }, []);
 
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (filter !== 'all') params.filter = filter;
-      const { data } = await api.get('/api/teacher/students', { params });
-      setStudents(data.students || data || mockStudents);
+      const { data } = await api.get('/api/teacher/students');
+      const raw = data.students || data || [];
+      // Map backend User objects to our Student interface
+      const mapped: Student[] = raw.map((s: any) => ({
+        id: s._id || s.id || '',
+        _id: s._id,
+        name: s.name || 'Unknown',
+        dept: s.department || s.dept || 'General',
+        sem: s.semester || s.sem || 0,
+        cgpa: s.cgpa || 0,
+        attendance: s.attendance || 0,
+        riskLevel: s.riskLevel || 'low',
+        performanceNote: s.performanceNote || s.riskReason || `${s.name || 'Student'} - ${s.department || 'General'}`,
+        email: s.email,
+        studentId: s.studentId,
+      }));
+      setStudents(mapped.length > 0 ? mapped : mockStudents);
     } catch {
       setStudents(mockStudents);
     } finally {
@@ -67,8 +83,8 @@ export default function StudentsPage() {
   };
 
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         s.dept.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (s.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (s.dept || '').toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
     if (filter === 'all') return true;
     if (filter === 'critical') return s.riskLevel === 'high';
@@ -95,6 +111,14 @@ export default function StudentsPage() {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.35 } },
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="font-handwrite text-3xl text-[var(--text-muted)] animate-pulse">Loading students…</div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -170,23 +194,23 @@ export default function StudentsPage() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         {filteredStudents.map(student => (
-          <motion.div key={student.id} variants={cardVariants}>
+          <motion.div key={student.id || student._id || student.name} variants={cardVariants}>
             <StickyCard color={getStickyColor(student.riskLevel)} rotation={-0.5}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <TeacherAvatar name={student.name} size={42} />
+                  <TeacherAvatar name={student.name || '?'} size={42} />
                   <div>
-                    <Link href={`/teacher/students/${student.id}`}>
+                    <Link href={`/teacher/students/${student.id || student._id}`}>
                       <h3 className="font-ui font-bold text-[var(--text-primary)] hover:text-[var(--accent-purple)] transition-colors cursor-pointer">
-                        {student.name}
+                        {student.name || 'Unknown'}
                       </h3>
                     </Link>
                     <p className="font-ui text-xs text-[var(--text-secondary)]">
-                      {student.dept} · Sem {student.sem}
+                      {student.dept || 'General'} · Sem {student.sem || '-'}
                     </p>
                   </div>
                 </div>
-                <RiskBadge level={student.riskLevel === 'improving' ? 'low' : student.riskLevel as any} label={getRiskLabel(student.riskLevel)} />
+                <RiskBadge level={student.riskLevel === 'improving' ? 'low' : (student.riskLevel || 'low') as any} label={getRiskLabel(student.riskLevel)} />
               </div>
 
               <div className="flex items-center justify-between text-sm mb-2">
@@ -203,13 +227,13 @@ export default function StudentsPage() {
               <hr className="border-t border-[var(--border-card)] mb-2" />
 
               <p className="font-body text-sm text-[var(--text-secondary)] mb-3 line-clamp-2">
-                {student.performanceNote}
+                {student.performanceNote || 'No performance notes available'}
               </p>
 
               <div className="w-full h-2 bg-[#E5E0D8] rounded-full overflow-hidden mb-3">
                 <div
                   className="h-full bg-[var(--accent-purple)] transition-all duration-500"
-                  style={{ width: `${student.attendance}%` }}
+                  style={{ width: `${student.attendance || 0}%` }}
                 />
               </div>
 

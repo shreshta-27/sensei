@@ -18,12 +18,35 @@ export default function PollsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ question: '', classId: '', options: 'Option A, Option B, Option C', expiry: '' });
   const [formOpen, setFormOpen] = useState(false);
+  const [classes, setClasses] = useState<any[]>([]);
 
   useEffect(() => {
-    api.get('/api/teacher/polls')
-      .then(r => setPolls(r.data.polls || r.data || []))
-      .catch(() => setPolls(mockPolls));
+    api.get('/api/teacher/classes')
+      .then(r => setClasses((r.data as any).classes || r.data || []))
+      .catch(() => {});
   }, []);
+
+  const fetchPolls = () => {
+    api.get('/api/teacher/polls')
+      .then(r => {
+        const raw = r.data.polls || r.data || [];
+        const mapped = raw.map((p: any) => ({
+          ...p,
+          active: p.isOpen !== false,
+          options: Array.isArray(p.options)
+            ? p.options.map((opt: any) =>
+                typeof opt === 'string'
+                  ? { text: opt, count: 0 }
+                  : { text: opt.text || opt, count: opt.count || 0 }
+              )
+            : [],
+        }));
+        setPolls(mapped.length > 0 ? mapped : mockPolls);
+      })
+      .catch(() => setPolls(mockPolls));
+  };
+
+  useEffect(() => { fetchPolls(); }, []);
 
   const create = async () => {
     if (!form.question || !form.options.trim()) { toast.error('Fill all fields'); return; }
@@ -33,6 +56,7 @@ export default function PollsPage() {
       toast.success('Poll launched!');
       setShowCreate(false);
       setForm({ question: '', classId: '', options: 'Option A, Option B, Option C', expiry: '' });
+      fetchPolls();
     } catch { toast.error('Failed to create poll'); }
   };
 
@@ -71,9 +95,9 @@ export default function PollsPage() {
                   <select className="w-full bg-white/80 border-2 border-[var(--border-doodle)] rounded-xl px-3 py-2 font-ui text-sm outline-none"
                     value={form.classId} onChange={e => setForm(f => ({ ...f, classId: e.target.value }))}>
                     <option value="">Select class…</option>
-                    <option value="c1">Fullstack - Sec B</option>
-                    <option value="c2">DBMS - Sec A</option>
-                    <option value="c3">DS Algorithms</option>
+                    {classes.map((cls: any) => (
+                      <option key={cls._id} value={cls._id}>{cls.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

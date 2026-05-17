@@ -301,12 +301,12 @@ export default function TeacherDashboard() {
             <h2 className="font-display text-xl text-[var(--text-primary)] mb-3">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Schedule Class',    icon: Calendar,       page: '/teacher/classes' },
-                { label: 'Share Notes',       icon: FileText,        page: '/teacher/upload'  },
-                { label: 'Parent Contact',    icon: Users,           page: '/teacher/students'},
-                { label: 'Wellness Check',    icon: Activity,        page: '/teacher/behavior-analyzer' },
-                { label: 'Create Poll',       icon: BarChart3,       page: '/teacher/polls'   },
-                { label: 'Message Class',     icon: MessageCircle,   page: '/teacher/interventions' },
+                { label: 'Upload Marks',     icon: Calendar,       page: '/teacher/upload'  },
+                { label: 'Help Queue',        icon: FileText,       page: '/teacher/help-queue' },
+                { label: 'View Students',     icon: Users,          page: '/teacher/students'},
+                { label: 'Wellness Check',    icon: Activity,       page: '/teacher/behavior-analyzer' },
+                { label: 'Create Poll',       icon: BarChart3,      page: '/teacher/polls'   },
+                { label: 'Interventions',     icon: MessageCircle,  page: '/teacher/interventions' },
               ].map((action, i) => (
                 <button key={i} onClick={() => router.push(action.page)}
                   className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/50 border border-[var(--border-card)] hover:bg-white hover:border-[var(--accent-purple)]/40 hover:-translate-y-0.5 transition-all group"
@@ -318,25 +318,40 @@ export default function TeacherDashboard() {
             </div>
           </StickyCard>
 
-          {/* ── Upcoming Events ── */}
+          {/* ── Help & Polls Summary ── */}
           <StickyCard color="purple">
-            <h2 className="font-display text-xl text-[var(--text-primary)] mb-3">Upcoming</h2>
+            <h2 className="font-display text-xl text-[var(--text-primary)] mb-3">Activity</h2>
             <div className="space-y-3">
-              {events.map((ev, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="flex flex-col items-center justify-center shrink-0 w-11 h-11 rounded-xl bg-white/70 border border-[var(--border-card)] shadow-sm">
-                    <span className="font-ui text-[9px] font-black text-[var(--text-muted)] uppercase leading-none">{ev.date.split(' ')[0]}</span>
-                    <span className="font-display text-base leading-none text-[var(--text-primary)] -mt-0.5">{ev.date.split(' ')[1]}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-ui text-sm font-bold text-[var(--text-primary)] block truncate">{ev.event}</span>
-                    <span className="font-body text-[11px] text-[var(--text-muted)]">{ev.subject}</span>
-                  </div>
+              <div className="flex items-center gap-3 p-2 bg-white/50 rounded-xl border border-[var(--border-card)]">
+                <div className="flex flex-col items-center justify-center shrink-0 w-11 h-11 rounded-xl bg-red-50 border border-red-100">
+                  <span className="font-display text-lg leading-none text-red-500">{data?.pendingHelpTickets ?? helpCount}</span>
                 </div>
-              ))}
+                <div className="flex-1 min-w-0">
+                  <span className="font-ui text-sm font-bold text-[var(--text-primary)] block truncate">Pending Help Tickets</span>
+                  <span className="font-body text-[11px] text-[var(--text-muted)]">Students need your help</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2 bg-white/50 rounded-xl border border-[var(--border-card)]">
+                <div className="flex flex-col items-center justify-center shrink-0 w-11 h-11 rounded-xl bg-purple-50 border border-purple-100">
+                  <span className="font-display text-lg leading-none text-purple-600">{(data as any)?.pollActivity?.active ?? 0}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-ui text-sm font-bold text-[var(--text-primary)] block truncate">Active Polls</span>
+                  <span className="font-body text-[11px] text-[var(--text-muted)]">Live student surveys</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2 bg-white/50 rounded-xl border border-[var(--border-card)]">
+                <div className="flex flex-col items-center justify-center shrink-0 w-11 h-11 rounded-xl bg-green-50 border border-green-100">
+                  <span className="font-display text-lg leading-none text-green-600">{data?.activeInterventions ?? 0}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-ui text-sm font-bold text-[var(--text-primary)] block truncate">Active Interventions</span>
+                  <span className="font-body text-[11px] text-[var(--text-muted)]">Student support plans</span>
+                </div>
+              </div>
             </div>
-            <button onClick={() => router.push('/teacher/calendar')} className="mt-4 w-full font-ui text-xs font-bold text-[var(--accent-purple)] hover:underline text-center">
-              <Calendar size={12} className="inline mr-1" /> Full Calendar
+            <button onClick={() => router.push('/teacher/help-queue')} className="mt-4 w-full font-ui text-xs font-bold text-[var(--accent-purple)] hover:underline text-center">
+              View Help Queue →
             </button>
           </StickyCard>
         </motion.div>

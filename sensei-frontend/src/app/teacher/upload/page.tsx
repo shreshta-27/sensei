@@ -39,9 +39,16 @@ export default function UploadPage() {
   const [done, setDone]       = useState(false);
   const [classId, setClassId] = useState('');
   const [dataType, setDataType] = useState<'marks'|'attendance'|'both'>('marks');
+  const [classes, setClasses] = useState<any[]>([]);
   const { on, emit } = useSocket('/teacher');
 
   const latestStep = pipe.findIndex(s => s.status !== 'done');
+
+  useEffect(() => {
+    api.get('/api/teacher/classes')
+      .then(r => setClasses((r.data as any).classes || r.data || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!uploadId) return;
@@ -133,9 +140,9 @@ export default function UploadPage() {
         <div className="mt-5 flex flex-wrap gap-3 items-center justify-center">
           <select value={classId} onChange={e => setClassId(e.target.value)} className="bg-white border-2 border-[var(--border-doodle)] rounded-xl px-4 py-2 font-ui text-sm outline-none min-w-[200px]">
             <option value="">Select Class…</option>
-            <option value="c1">Fullstack - Sec B</option>
-            <option value="c2">DBMS - Sec A</option>
-            <option value="c3">DS Algorithms</option>
+            {classes.map((cls: any) => (
+              <option key={cls._id} value={cls._id}>{cls.name}</option>
+            ))}
           </select>
           {(['marks','attendance','both'] as const).map(d => (
             <button key={d} onClick={() => setDataType(d)}

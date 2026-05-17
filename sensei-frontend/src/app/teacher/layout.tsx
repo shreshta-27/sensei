@@ -26,9 +26,11 @@ const navItems = [
   { href: '/teacher/interventions', icon: AlertTriangle, label: 'Interventions' },
   { href: '/teacher/grading', icon: FileText, label: 'Assessments' },
   { href: '/teacher/reports', icon: BarChart3Icon, label: 'Reports' },
-  { href: '/teacher/upload', icon: Upload, label: 'Resources' },
-  { href: '/teacher/calendar', icon: Calendar, label: 'Calendar' },
-  { href: '/teacher/profile', icon: Settings, label: 'Settings' },
+  { href: '/teacher/upload', icon: Upload, label: 'Upload Marks' },
+  { href: '/teacher/help-queue', icon: Activity, label: 'Help Queue' },
+  { href: '/teacher/polls', icon: BarChart3Icon, label: 'Polls' },
+  { href: '/teacher/behavior-analyzer', icon: BrainCircuit, label: 'Behavior' },
+  { href: '/teacher/profile', icon: Settings, label: 'Profile' },
 ];
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {

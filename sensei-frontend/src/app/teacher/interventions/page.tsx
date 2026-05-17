@@ -43,10 +43,29 @@ export default function InterventionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState<Intervention['status'] | 'all'>('all');
   const [form, setForm] = useState<{ student: string; type: string; urgency: 'medium' | 'high' | 'low'; message: string }>({ student: '', type: 'academic', urgency: 'medium', message: '' });
+  const [studentsList, setStudentsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get('/api/teacher/students')
+      .then(r => setStudentsList(r.data.students || r.data || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     api.get('/api/teacher/interventions')
-      .then(r => setItems(r.data.interventions || r.data || []))
+      .then(r => {
+        const raw = r.data.interventions || r.data || [];
+        const mapped = raw.map((item: any) => ({
+          ...item,
+          student: item.studentId ? { name: item.studentId.name || 'Unknown', risk: item.urgency } : item.student || { name: 'Class-level' },
+          date: item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : item.date || 'recently',
+          type: item.triggerType || item.type || 'academic',
+          urgency: item.urgency || 'medium',
+          status: item.status || 'sent',
+          message: item.message || '',
+        }));
+        setItems(mapped.length > 0 ? mapped : mockData);
+      })
       .catch(() => setItems(mockData))
       .finally(() => setLoading(false));
   }, []);
@@ -54,10 +73,25 @@ export default function InterventionsPage() {
   const create = async () => {
     if (!form.message) { toast.error('Write a message'); return; }
     try {
-      await api.post('/api/teacher/interventions', form);
+      await api.post('/api/teacher/interventions', { studentId: form.student, message: form.message });
       toast.success('Intervention sent!');
       setShowModal(false);
       setForm({ student: '', type: 'academic', urgency: 'medium', message: '' });
+      // Refresh list
+      api.get('/api/teacher/interventions')
+        .then(r => {
+          const raw = r.data.interventions || r.data || [];
+          const mapped = raw.map((item: any) => ({
+            ...item,
+            student: item.studentId ? { name: item.studentId.name || 'Unknown', risk: item.urgency } : item.student || { name: 'Class-level' },
+            date: item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : item.date || 'recently',
+            type: item.triggerType || item.type || 'academic',
+            urgency: item.urgency || 'medium',
+            status: item.status || 'sent',
+            message: item.message || '',
+          }));
+          setItems(mapped.length > 0 ? mapped : mockData);
+        });
     } catch { toast.error('Failed to create'); }
   };
 
@@ -182,7 +216,10 @@ export default function InterventionsPage() {
                   <select className="w-full bg-white/80 border-2 border-[var(--border-doodle)] rounded-xl px-3 py-2 font-ui text-sm outline-none"
                     value={form.student} onChange={e => setForm(f => ({ ...f, student: e.target.value }))}>
                     <option value="">Select student…</option>
-                    {['Rahul Verma', 'Sneha Iyer', 'Arjun Nair'].map(s => <option key={s} value={s}>{s}</option>)}
+                    {studentsList.length > 0
+                      ? studentsList.map((s: any) => <option key={s._id} value={s._id}>{s.name}</option>)
+                      : ['Rahul Verma', 'Sneha Iyer', 'Arjun Nair'].map(s => <option key={s} value={s}>{s}</option>)
+                    }
                   </select>
                 </div>
                 <div>

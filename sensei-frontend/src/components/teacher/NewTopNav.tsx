@@ -9,7 +9,7 @@ import { BookOpen, Bell, User, ChevronDown, Settings, LogOut, Sparkles, Activity
 
 const NAV_LINKS = [
   'Home', 'My Classes', 'Students', 'AI Insights',
-  'Interventions', 'Assessments', 'Reports', 'Resources', 'Calendar', 'Settings',
+  'Interventions', 'Assessments', 'Reports', 'Upload', 'Help Queue', 'Polls',
 ];
 
 const NOTIFICATIONS = [
@@ -67,9 +67,9 @@ export default function NewTopNav() {
       Interventions: '/teacher/interventions',
       Assessments: '/teacher/grading',
       Reports: '/teacher/reports',
-      Resources: '/teacher/upload',
-      Calendar: '/teacher/calendar',
-      Settings: '/teacher/profile',
+      Upload: '/teacher/upload',
+      'Help Queue': '/teacher/help-queue',
+      Polls: '/teacher/polls',
     };
     const href = map[link];
     if (href === '/teacher') return pathname === '/teacher';
@@ -126,10 +126,12 @@ export default function NewTopNav() {
                     ? '/teacher/grading'
                     : link === 'Reports'
                     ? '/teacher/reports'
-                    : link === 'Resources'
+                    : link === 'Upload'
                     ? '/teacher/upload'
-                    : link === 'Calendar'
-                    ? '/teacher/calendar'
+                    : link === 'Help Queue'
+                    ? '/teacher/help-queue'
+                    : link === 'Polls'
+                    ? '/teacher/polls'
                     : '/teacher/profile'
                 }
                 className={`px-3 py-1.5 rounded-lg font-ui text-sm font-semibold transition-all ${
