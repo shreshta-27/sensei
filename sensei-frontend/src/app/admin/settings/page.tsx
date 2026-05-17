@@ -396,11 +396,24 @@ export default function AdminSettingsPage() {
                   ].map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => setAppearance({ ...appearance, theme: t.id })}
+                      onClick={() => {
+                        setAppearance({ ...appearance, theme: t.id });
+                        if (t.id === 'dark') {
+                          document.documentElement.classList.add('dark');
+                        } else if (t.id === 'light') {
+                          document.documentElement.classList.remove('dark');
+                        } else {
+                          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                            document.documentElement.classList.add('dark');
+                          } else {
+                            document.documentElement.classList.remove('dark');
+                          }
+                        }
+                      }}
                       className="p-4 rounded-xl flex flex-col items-center gap-2 transition-all"
                       style={{
-                        background: appearance.theme === t.id ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.5)',
-                        border: `2px solid ${appearance.theme === t.id ? 'var(--adm-accent)' : 'rgba(124,58,237,0.08)'}`,
+                        background: appearance.theme === t.id ? 'var(--adm-accent-light)' : 'var(--adm-surface-raised)',
+                        border: `2px solid ${appearance.theme === t.id ? 'var(--adm-accent)' : 'var(--adm-border)'}`,
                       }}
                     >
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: t.color }}>
@@ -420,7 +433,7 @@ export default function AdminSettingsPage() {
                   <div
                     key={item.key}
                     className="flex items-center gap-4 p-4 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(124,58,237,0.06)' }}
+                    style={{ background: 'var(--adm-surface-raised)', border: '1px solid var(--adm-border)' }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: 'var(--adm-text)' }}>{item.label}</p>

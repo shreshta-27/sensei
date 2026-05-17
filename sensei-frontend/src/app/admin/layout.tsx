@@ -8,12 +8,13 @@ import {
   LayoutDashboard, GraduationCap, BarChart3, Users,
   Brain, AlertTriangle, FileText, Zap, BookOpen,
   Database, Settings, LogOut, X, Menu, ChevronLeft, User,
+  ChevronDown, Bell, LayoutGrid
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const TeacherAIChatbot = dynamic(() => import('@/components/TeacherAIChatbot'), { ssr: false });
+const AdminAIChatbot = dynamic(() => import('@/components/AdminAIChatbot'), { ssr: false });
 
 const NAV_ITEMS = [
   { href: '/admin',                    label: 'Overview',      icon: LayoutDashboard },
@@ -36,11 +37,28 @@ const MOBILE_QUICK = [
   { href: '/admin/dropout-warning', label: 'AI',       icon: Brain           },
 ];
 
+const NOTIFICATIONS = [
+  { id: '1', title: 'High CGPA Threshold Breached', desc: 'B.Tech IT - Attendance anomaly detected', type: 'medium', time: '06:49 PM' },
+  { id: '2', title: 'AI pattern shift detected', desc: 'Engagement drop - 3rd year students', type: 'medium', time: '06:48 PM' },
+  { id: '3', title: 'Counselor session scheduled', desc: 'Auto-assigned for 12 students', type: 'info', time: '05:48 PM' },
+];
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [dateStr, setDateStr] = useState('');
+  const [notifOpen, setNotifOpen] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const now = new Date();
+    setDateStr(
+      now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
+    );
+  }, []);
 
   useEffect(() => { if (!user || user.role !== 'admin') router.push('/login'); }, [user, router]);
   useEffect(() => { setDrawerOpen(false); }, [pathname]);
@@ -69,33 +87,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           Pure icon rail with CSS tooltips on hover.
          ══════════════════════════════════════════════ */}
       <aside
-        className="hidden lg:flex fixed right-3 top-3 bottom-3 z-50 flex-col overflow-hidden adm-glass-panel"
+        className="hidden lg:flex fixed right-3 top-3 bottom-3 z-50 flex-col overflow-visible adm-glass-panel"
         style={{
           width: `${RAIL_W}px`,
           borderRadius: '22px',
         }}
       >
-        {/* ── Brand Logo ── */}
-        <div
-          className="flex items-center justify-center pt-4 pb-3 flex-shrink-0"
-          style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
-        >
-          <div
-            className="w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-base shadow-md"
-            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)' }}
-          >
-            S
-          </div>
-        </div>
-
         {/* ── User Profile ── */}
         <div
-          className="flex items-center justify-center py-3 flex-shrink-0"
+          className="flex items-center justify-center pt-5 pb-3 flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
         >
           <Link href="/admin/settings" className="adm-nav-tooltip-wrap">
             <div
-              className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm text-sm transition-all duration-200 hover:ring-2 hover:ring-purple-400 hover:ring-offset-2 ${pathname === '/admin/settings' ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm text-sm transition-all duration-200 hover:ring-2 hover:ring-purple-400 hover:ring-offset-2 adm-nav-avatar ${pathname === '/admin/settings' ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
               style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #C084FC 100%)' }}
             >
               {user.name?.charAt(0).toUpperCase()}
@@ -105,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* ── Nav ── */}
-        <nav className="flex-1 overflow-y-auto adm-scrollbar py-3 px-2 space-y-0.5">
+        <nav className="flex-1 overflow-visible py-3 px-2 space-y-0.5">
           {NAV_ITEMS.map((n) => {
             const active = isActive(n.href);
             return (
@@ -134,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 )}
                 {/* Icon */}
                 <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center adm-nav-icon"
                   style={{ background: active ? 'rgba(124,58,237,0.15)' : 'transparent' }}
                 >
                   <n.icon
@@ -219,11 +224,108 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           style={{ marginRight: 0 }}
         >
           <div className="lg:mr-[84px]">
+            {/* ── DESKTOP GLOBAL HEADER ── */}
+            <header className="hidden lg:flex items-center justify-between mb-8 pb-4" style={{ borderBottom: '1px solid rgba(124,58,237,0.08)' }}>
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow"
+                  style={{ background: 'linear-gradient(135deg, var(--adm-accent, #7C3AED), #A78BFA)' }}
+                >
+                  S
+                </div>
+                <span className="font-extrabold text-xl tracking-wider" style={{ color: 'var(--adm-text)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                  SENSEI
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-3 relative">
+                {/* Date button */}
+                <button
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    background: 'var(--adm-surface)',
+                    borderColor: 'var(--adm-border-solid)',
+                    color: 'var(--adm-text-sub)',
+                    boxShadow: 'var(--adm-shadow-sm)',
+                  }}
+                >
+                  {dateStr || 'TODAY'} <ChevronDown size={12} />
+                </button>
+                
+                {/* Clickable Notification Bell with Popover */}
+                <div className="relative">
+                  <button
+                    id="adm-bell-button"
+                    onClick={() => setNotifOpen(!notifOpen)}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center relative transition-all border"
+                    style={{
+                      background: 'var(--adm-surface)',
+                      borderColor: 'var(--adm-border-solid)',
+                      color: 'var(--adm-text-sub)',
+                      boxShadow: 'var(--adm-shadow-sm)',
+                    }}
+                  >
+                    <Bell size={16} />
+                    {/* Active Alerts Badge */}
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+                  </button>
+                  
+                  {mounted && notifOpen && (
+                    <div
+                      className="absolute right-0 mt-3 w-80 rounded-2xl shadow-xl border p-4 z-50 space-y-3 transition-all duration-200"
+                      style={{
+                        background: 'var(--adm-surface-raised)',
+                        borderColor: 'var(--adm-border-solid)',
+                        color: 'var(--adm-text)',
+                      }}
+                    >
+                      <div className="flex items-center justify-between border-b pb-2 mb-1" style={{ borderColor: 'rgba(124,58,237,0.1)' }}>
+                        <span className="text-xs font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>System Alerts</span>
+                        <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider">3 ACTIVE</span>
+                      </div>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto adm-scrollbar pr-1">
+                        {NOTIFICATIONS.map((item) => (
+                          <div key={item.id} className="p-2.5 rounded-xl border flex flex-col gap-0.5 transition-all hover:bg-purple-500/5 cursor-pointer"
+                               style={{ background: 'var(--adm-surface)', borderColor: 'var(--adm-border-solid)' }}>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
+                                item.type === 'high' ? 'bg-red-500/10 text-red-500' :
+                                'bg-amber-500/10 text-amber-500'
+                              }`}>
+                                {item.type}
+                              </span>
+                              <span className="text-[9px]" style={{ color: 'var(--adm-text-muted)' }}>{item.time}</span>
+                            </div>
+                            <h4 className="text-xs font-semibold mt-1" style={{ color: 'var(--adm-text)' }}>{item.title}</h4>
+                            <p className="text-[10px]" style={{ color: 'var(--adm-text-muted)' }}>{item.desc}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Layout Grid */}
+                <button
+                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-all border"
+                  style={{
+                    background: 'var(--adm-surface)',
+                    borderColor: 'var(--adm-border-solid)',
+                    color: 'var(--adm-text-sub)',
+                    boxShadow: 'var(--adm-shadow-sm)',
+                  }}
+                >
+                  <LayoutGrid size={16} />
+                </button>
+              </div>
+            </header>
+            
             {children}
           </div>
         </div>
 
-        <TeacherAIChatbot />
+        <AdminAIChatbot />
       </main>
 
       {/* ══════════════════════════════════════════════

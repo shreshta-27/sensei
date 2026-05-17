@@ -44,5 +44,9 @@
     "winston": "^3.15.0",
     "youtube-transcript": "^1.2.1",
     "zod": "^3.23.0"
+  },
+  "optionalDependencies": {
+    "@napi-rs/canvas-linux-arm64-gnu": "^1.0.0",
+    "@napi-rs/canvas-linux-x64-gnu": "^1.0.0"
   }
 }

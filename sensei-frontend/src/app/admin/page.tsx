@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, GraduationCap, BookOpen, Activity, Bell, LayoutGrid, ChevronDown } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, Activity } from 'lucide-react';
 import api from '@/lib/axios';
 import AdminStatCard from '@/components/admin/AdminStatCard';
 import AIEventStream from '@/components/admin/AIEventStream';
@@ -14,14 +14,6 @@ import DepartmentsTable from '@/components/admin/DepartmentsTable';
 
 export default function AdminDashboard() {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [dateStr, setDateStr] = useState('');
-
-  useEffect(() => {
-    const now = new Date();
-    setDateStr(
-      now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
-    );
-  }, []);
 
   useEffect(() => {
     api
@@ -77,45 +69,6 @@ export default function AdminDashboard() {
           <p className="text-sm" style={{ color: 'var(--adm-text-muted)' }}>
             Real-time overview of your intelligent campus ecosystem.
           </p>
-        </div>
-
-        {/* Header actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all"
-            style={{
-              background: 'rgba(255,255,255,0.7)',
-              backdropFilter: 'blur(12px)',
-              borderColor: 'rgba(255,255,255,0.9)',
-              color: 'var(--adm-text-sub)',
-              boxShadow: '0 2px 8px rgba(124,58,237,0.08)',
-            }}
-          >
-            {dateStr} <ChevronDown size={12} />
-          </button>
-          <button
-            className="w-9 h-9 rounded-xl flex items-center justify-center relative transition-all"
-            style={{
-              background: 'rgba(255,255,255,0.7)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.9)',
-              color: 'var(--adm-text-sub)',
-              boxShadow: '0 2px 8px rgba(124,58,237,0.08)',
-            }}
-          >
-            <Bell size={16} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
-          </button>
-          <button
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-            style={{
-              background: 'linear-gradient(135deg, #7C3AED, #A78BFA)',
-              color: 'white',
-              boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
-            }}
-          >
-            <LayoutGrid size={16} />
-          </button>
         </div>
       </motion.div>
 

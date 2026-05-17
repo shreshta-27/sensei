@@ -750,6 +750,38 @@ body {
   --adm-nav-text: #5B5680;
 }
 
+.dark {
+  /* Admin Dark Theme */
+  --adm-bg: #0D0D1E;
+  --adm-surface: #151528;
+  --adm-surface-raised: #1A1A32;
+  --adm-border: rgba(124, 58, 237, 0.2);
+  --adm-border-solid: #2A2A48;
+  --adm-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --adm-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --adm-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.7);
+
+  /* Text */
+  --adm-text: #F8FAFC;
+  --adm-text-sub: #CBD5E1;
+  --adm-text-muted: #64748B;
+
+  /* Accent */
+  --adm-accent: #9333EA;
+  --adm-accent-light: rgba(147, 51, 234, 0.2);
+  --adm-accent-soft: rgba(147, 51, 234, 0.3);
+
+  /* Nav */
+  --adm-nav-active-bg: rgba(147, 51, 234, 0.2);
+  --adm-nav-active-text: #D8B4FE;
+  --adm-nav-hover-bg: #1A1A32;
+  --adm-nav-text: #CBD5E1;
+
+  /* Forms */
+  --adm-input-bg: #0B0B16;
+  --adm-input-border: #2A2A48;
+}
+
 /* Admin scrollbar */
 .adm-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
 .adm-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 8px; }
@@ -758,21 +790,21 @@ body {
 
 /* Admin page background with dot pattern */
 .adm-page {
-  background-color: #F2F0FF;
+  background-color: var(--adm-bg);
   background-image:
-    radial-gradient(circle, rgba(124,58,237,0.09) 1.2px, transparent 1.2px);
+    radial-gradient(circle, var(--adm-border) 1.2px, transparent 1.2px);
   background-size: 22px 22px;
   min-height: 100vh;
 }
 
 /* Glassmorphism card */
 .adm-card {
-  background: rgba(255, 255, 255, 0.68);
+  background: var(--adm-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--adm-border-solid);
   border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(124,58,237,0.07), 0 1px 0 rgba(255,255,255,0.85) inset;
+  box-shadow: var(--adm-shadow);
   transition: box-shadow 0.22s ease, transform 0.22s ease;
 }
 .adm-card:hover {
@@ -781,11 +813,11 @@ body {
 
 /* Floating glass panel (sidebar) */
 .adm-glass-panel {
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--adm-surface);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 40px rgba(124,58,237,0.15), 0 1px 0 rgba(255,255,255,0.9) inset;
+  border: 1px solid var(--adm-border-solid);
+  box-shadow: var(--adm-shadow-lg);
 }
 
 /* Admin badge */
@@ -1191,25 +1223,34 @@ body {
   position: relative;
 }
 
+/* Premium micro-animation: zoom icons on hover */
+.adm-nav-icon, .adm-nav-avatar {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.adm-nav-tooltip-wrap:hover .adm-nav-icon,
+.adm-nav-tooltip-wrap:hover .adm-nav-avatar {
+  transform: scale(1.18);
+}
+
 .adm-nav-tooltip {
   position: absolute;
-  right: calc(100% + 12px);
+  right: calc(100% + 14px);
   top: 50%;
-  transform: translateY(-50%) scale(0.92);
-  background: rgba(30, 16, 80, 0.92);
+  transform: translateY(-50%) translateX(8px) scale(0.9);
+  background: linear-gradient(135deg, var(--adm-accent, #7C3AED) 0%, #A78BFA 100%);
   color: #fff;
-  font-size: 0.7rem;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  letter-spacing: 0.02em;
-  padding: 6px 12px;
-  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.03em;
+  padding: 6px 14px;
+  border-radius: 12px;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 999;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--adm-shadow-lg);
 }
 
 .adm-nav-tooltip::after {
@@ -1219,12 +1260,12 @@ body {
   top: 50%;
   transform: translateY(-50%);
   border: 5px solid transparent;
-  border-left-color: rgba(30, 16, 80, 0.92);
+  border-left-color: #A78BFA;
 }
 
 .adm-nav-tooltip-wrap:hover .adm-nav-tooltip {
   opacity: 1;
-  transform: translateY(-50%) scale(1);
+  transform: translateY(-50%) translateX(0) scale(1);
 }
 
 .adm-nav-tooltip-danger {
