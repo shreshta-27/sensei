@@ -474,8 +474,8 @@ export default function LandingPage() {
             </motion.div>
 
             {/* RIGHT: hero illustration — Image */}
-            <div className="hidden lg:block" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
-              <img src="/images/hero-bg.png" alt="Sensei Campus Illustration" style={{ width: '115%', maxWidth: 720, height: 'auto', objectFit: 'contain', marginLeft: '-2rem', filter: 'drop-shadow(0 8px 32px rgba(123,79,233,0.15))' }} />
+            <div className="hidden lg:block" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible', padding: 10 }}>
+              <img src="/images/hero-bg.png" alt="Sensei Campus Illustration" style={{ width: '115%', maxWidth: 700, height: 'auto', objectFit: 'contain', marginLeft: '-2rem', filter: 'drop-shadow(0 8px 32px rgba(123,79,233,0.15))' }} />
             </div>
 
           </div>
