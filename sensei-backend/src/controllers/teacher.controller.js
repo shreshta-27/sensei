@@ -310,6 +310,21 @@ export const updateOutcome = async (req, res) => {
   }
 };
 
+export const updateStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const update = { status };
+    if (status === 'resolved') {
+      Object.assign(update, { resolvedAt: new Date() });
+    }
+    const intervention = await Intervention.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!intervention) return res.status(404).json({ error: 'Intervention not found' });
+    res.json({ message: 'Status updated successfully', intervention });
+  } catch (error) {
+    res.status(500).json({ error: error.message, code: 500 });
+  }
+};
+
 
 export const createPoll = async (req, res) => {
   try {

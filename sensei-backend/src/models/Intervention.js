@@ -7,7 +7,7 @@ const interventionSchema = new mongoose.Schema({
   message:      { type: String, required: true },
   tags:         [{ type: String }],
   urgency:      { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
-  status:       { type: String, enum: ['sent', 'viewed', 'acknowledged', 'resolved'], default: 'sent' },
+  status:       { type: String, enum: ['sent', 'viewed', 'acknowledged', 'resolved', 'in_progress'], default: 'sent' },
   outcome:      { type: String, enum: ['improved', 'pending', 'worsened', 'na'], default: 'pending' },
   riskAtSend:   { type: Number },
   studyPlanId:  { type: mongoose.Schema.Types.ObjectId, ref: 'StudyPlan' },

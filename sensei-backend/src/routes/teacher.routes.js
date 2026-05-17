@@ -21,6 +21,7 @@ router.get('/upload/:uploadId/status', ctrl.getUploadStatus);
 router.get('/interventions', ctrl.getInterventions);
 router.post('/interventions', ctrl.createIntervention);
 router.patch('/interventions/:id/outcome', ctrl.updateOutcome);
+router.patch('/interventions/:id/status', ctrl.updateStatus);
 router.get('/polls', ctrl.getPolls);
 router.post('/polls', ctrl.createPoll);
 router.get('/polls/:pollId/results', ctrl.getPollResults);
